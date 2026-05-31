@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+
+@layer base {
+  :root {
+    --color-bg-primary: #fafafa; /* zinc-50 */
+    --color-bg-secondary: #ffffff;
+    --color-text-primary: #09090b; /* zinc-950 */
+    --color-text-secondary: #52525b; /* zinc-600 */
+    --color-border: #e4e4e7; /* zinc-200 */
+    --color-accent: #09090b;
+  }
+
+
+
+  html, 
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@layer utilities {
+  .rgb-frame {
+    position: relative;
+    padding: 2px;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #858383, #4d4e4d, #2d2d2d, #161619);
+    background-size: 200% 200%;
+    animation: rgb-flow 4s linear infinite;
+  }
+
+  @keyframes rgb-flow {
+    0% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+
+  .rgb-frame-content {
+    background: #222224;
+    border-radius: 1.15rem;
+    height: 100%;
+    width: 100%;
+  }
+
+  .glassmorphism {
+    background: rgba(82, 81, 81, 0.487);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(242, 235, 235, 0.809);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    
+  }
+}
