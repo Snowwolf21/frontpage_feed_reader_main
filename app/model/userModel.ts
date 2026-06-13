@@ -1,16 +1,13 @@
 import mongoose from "mongoose";
 
-
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     lastName: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     username: {
         type: String,
@@ -21,16 +18,14 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-         required: true,
+        required: true,
         unique: true
     },
     password: {
         type: String,
-         required: true,
-         unique: true,
-        minLength: 6,
-        maxLength: 12}
+        required: true
+    }
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 export default User;
