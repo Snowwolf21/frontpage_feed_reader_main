@@ -1,5 +1,5 @@
-
 import { ExternalLink, Rss } from 'lucide-react';
+import { sanitizeHtml } from '@/app/lib/sanitize';
 
 export interface Feed {
   title: string;
@@ -36,19 +36,20 @@ export default function FeedDisplay({ data }: { data: SampleFeeds }) {
 
           <div className="grid grid-cols-1 gap-4">
             {category.feeds.map((feed) => (
-              <div 
-                key={feed.feedUrl} 
-                className="group relative p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-none"
+              <div
+                key={feed.feedUrl}
+                className="group relative p-5 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 hover:shadow-md"
               >
                 <div className="flex flex-col h-full">
                   <div className="flex justify-between items-start mb-3">
                     <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg group-hover:bg-zinc-100 dark:group-hover:bg-zinc-700 transition-colors">
                       <Rss className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                     </div>
-                    <a 
-                      href={feed.siteUrl} 
-                      target="_blank" 
+                    <a
+                      href={feed.siteUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
+                      aria-label={`Visit ${feed.title} website`}
                       className="opacity-0 group-hover:opacity-100 p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all transform translate-y-1 group-hover:translate-y-0"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -60,7 +61,7 @@ export default function FeedDisplay({ data }: { data: SampleFeeds }) {
                       {feed.title}
                     </h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 mb-4 leading-relaxed">
-                      {feed.description}
+                      {sanitizeHtml(feed.description)}
                     </p>
                   </div>
 
