@@ -7,6 +7,8 @@ import { X, Eye, EyeOff } from "lucide-react";
 import Button from "./Button";
 import Link from "next/link";
 import Logo from "@/components/ui/logo";
+import PasswordStrengthMeter from "./PasswordStrengthMeter";
+import { validatePasswordStrength } from "@/app/lib/passwordValidator";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,7 +20,6 @@ interface AuthModalProps {
 const NAME_REGEX = /^[A-Za-z][A-Za-z'-]{1,49}$/;
 const USERNAME_REGEX = /^[A-Za-z][A-Za-z0-9_]{2,14}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,12}$/;
 
 export default function AuthModal({ isOpen, onClose, initialView = "login", onSuccess }: AuthModalProps) {
   // Prevent scrolling when modal is open
@@ -96,8 +97,10 @@ function AuthModalContent({
         return "Username must start with a letter and use 3-15 letters, numbers, or underscores.";
       }
 
-      if (!PASSWORD_REGEX.test(password)) {
-        return "Password must be 6-12 characters with at least one letter and one number.";
+      // Use new password strength validator
+      const passwordStrength = validatePasswordStrength(password);
+      if (!passwordStrength.isStrong) {
+        return passwordStrength.feedback[0] || "Password is not strong enough.";
       }
     }
 
@@ -182,9 +185,10 @@ function AuthModalContent({
       className="relative w-full max-w-md overflow-hidden p-1 rounded-lg z-60"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="bg-zinc-800 rounded-lg p-8">
+      <div className="bg-zinc-800 rounded-lg p-8 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
+          aria-label="Close modal"
           className="absolute right-6 top-6 text-zinc-500 hover:text-white transition-colors cursor-pointer z-60"
         >
           <X className="h-6 w-6" />
@@ -202,12 +206,11 @@ function AuthModalContent({
             {view === "login" ? "Welcome back" : "Create account"}
           </h2>
           <p className="text-sm text-zinc-400">
-            {view === "login"
-              ? "Don't have an account?"
-              : "Already have an account?"}
+            {view === "login" ? "Don't have an account?" : "Already have an account?"}
             <button
               onClick={() => setView(view === "login" ? "signup" : "login")}
               className="font-semibold ml-2 text-white hover:underline transition-colors cursor-pointer"
+              type="button"
             >
               {view === "login" ? "Sign up" : "Log in"}
             </button>
@@ -227,11 +230,12 @@ function AuthModalContent({
               {view === "signup" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-zinc-300">
+                    <label className="block text-sm font-medium text-zinc-300" htmlFor="firstName">
                       First name
                     </label>
                     <input
                       type="text"
+                      id="firstName"
                       value={firstName}
                       onChange={(event) => setFirstName(event.target.value)}
                       className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
@@ -239,14 +243,16 @@ function AuthModalContent({
                       pattern="[A-Za-z][A-Za-z'-]{1,49}"
                       title="Use 2-50 letters. Apostrophes and hyphens are allowed."
                       required={view === "signup"}
+                      aria-describedby="firstName-help"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-zinc-300">
+                    <label className="block text-sm font-medium text-zinc-300" htmlFor="lastName">
                       Last name
                     </label>
                     <input
                       type="text"
+                      id="lastName"
                       value={lastName}
                       onChange={(event) => setLastName(event.target.value)}
                       className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
@@ -254,6 +260,7 @@ function AuthModalContent({
                       pattern="[A-Za-z][A-Za-z'-]{1,49}"
                       title="Use 2-50 letters. Apostrophes and hyphens are allowed."
                       required={view === "signup"}
+                      aria-describedby="lastName-help"
                     />
                   </div>
                 </div>
@@ -276,6 +283,7 @@ function AuthModalContent({
                     minLength={3}
                     maxLength={15}
                     required
+                    aria-describedby="username-help"
                   />
                 </div>
               )}
@@ -291,9 +299,10 @@ function AuthModalContent({
                   onChange={(event) => setEmail(event.target.value)}
                   className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
                   placeholder="jane@example.com"
-                  pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}"
+                  pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}"
                   title="Enter a valid email address."
                   required
+                  aria-describedby="email-help"
                 />
               </div>
 
@@ -316,15 +325,14 @@ function AuthModalContent({
                     onChange={(event) => setPassword(event.target.value)}
                     className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
                     placeholder="••••••••"
-                    pattern={view === "signup" ? "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{6,12}$" : undefined}
-                    title={view === "signup" ? "Use 6-12 characters with at least one letter and one number." : undefined}
-                    minLength={view === "signup" ? 6 : undefined}
-                    maxLength={view === "signup" ? 12 : undefined}
+                    minLength={view === "signup" ? 12 : undefined}
                     required
+                    aria-describedby="password-help"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer"
                   >
                     {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
@@ -332,17 +340,25 @@ function AuthModalContent({
                 </div>
               </div>
 
+              {/* Password Strength Meter for Signup */}
+              {view === "signup" && password && (
+                <PasswordStrengthMeter password={password} showFeedback={true} />
+              )}
+
               {view === "signup" && (
-                <div className="flex items-center gap-2 py-2">
+                <div className="flex items-start gap-2 py-2">
                   <input
                     type="checkbox"
                     id="terms"
                     checked={termsAccepted}
                     onChange={(event) => setTermsAccepted(event.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-zinc-700"
+                    className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-zinc-700 mt-1"
+                    aria-describedby="terms-help"
+                    required
                   />
                   <label htmlFor="terms" className="text-xs text-zinc-500">
-                    I agree to the <Link href="#" className="underline">Terms</Link> and <Link href="#" className="underline">Privacy</Link>
+                    I agree to the <Link href="#" className="underline hover:text-zinc-400">Terms</Link> and{" "}
+                    <Link href="#" className="underline hover:text-zinc-400">Privacy Policy</Link>
                   </label>
                 </div>
               )}
@@ -353,6 +369,7 @@ function AuthModalContent({
                     type="checkbox"
                     id="remember"
                     className="h-4 w-4 rounded border-zinc-800 bg-zinc-950 text-white focus:ring-zinc-700"
+                    aria-describedby="remember-help"
                   />
                   <label htmlFor="remember" className="text-sm text-zinc-500">
                     Remember me
@@ -363,7 +380,7 @@ function AuthModalContent({
           </AnimatePresence>
 
           {status && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">
               {status}
             </p>
           )}
@@ -372,7 +389,8 @@ function AuthModalContent({
             type="submit"
             text={isSubmitting ? "Please wait..." : view === "login" ? "Log in" : "Create account"}
             fullWidth
-            className="mt-2 bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold shadow-lg shadow-white/5"
+            disabled={isSubmitting}
+            className="mt-2 bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </form>
       </div>
