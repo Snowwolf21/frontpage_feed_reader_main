@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Logo from "@/components/ui/logo";
 import { ReactNode, useState } from "react";
 import AuthModal from "./AuthModal";
@@ -18,7 +17,6 @@ interface HeaderProps {
 }
 
 export const Header = ({
-  logo = <Logo />,
   text = "Frontpage",
   leftContent,
   rightContent,
@@ -39,7 +37,7 @@ export const Header = ({
       <div className="flex justify-between items-center p-6 mx-auto max-w-7xl">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {logo}
+            <Logo />
             <span className={`text-2xl font-bold tracking-wider font-sans ${showDefaultAuth ? 'text-zinc-900': 'text-zinc-50'}`}>
               {text}
             </span>
@@ -71,4 +69,3 @@ export const Header = ({
     </header>
   );
 };
-

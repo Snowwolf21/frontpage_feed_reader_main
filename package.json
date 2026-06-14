@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "set -a; . ./.env.build; set +a; next build",
+    "build:production": "set -a; . ./.env.production; set +a; next build",
+    "start": "set -a; . ./.env.production; set +a; next start",
+    "start:production": "set -a; . ./.env.production; set +a; next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -29,7 +31,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
