@@ -1,14 +1,15 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Loader } from "lucide-react";
 import Button from "./Button";
 import Link from "next/link";
 import Logo from "@/components/ui/logo";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import { validatePasswordStrength } from "@/app/lib/passwordValidator";
+
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function AuthModal({ isOpen, onClose, initialView = "login", onSu
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
 
   return (
     <AnimatePresence>
@@ -73,18 +75,18 @@ function AuthModalContent({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+ const [Loading, setLoading] = useState(false);
   const validateForm = () => {
     const trimmedEmail = email.trim();
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
     const trimmedUsername = username.trim();
-
-    if (!EMAIL_REGEX.test(trimmedEmail)) {
-      return "Enter a valid email address.";
-    }
-
+   
     if (view === "signup") {
+      if (!EMAIL_REGEX.test(trimmedEmail)) {
+        return "Enter a valid email address.";
+      }
+
       if (!NAME_REGEX.test(trimmedFirstName)) {
         return "First name must be 2-50 letters and may include apostrophes or hyphens.";
       }
@@ -104,17 +106,24 @@ function AuthModalContent({
       }
     }
 
-    if (view === "login" && password.trim().length === 0) {
-      return "Enter your password.";
+    if (view === "login") {
+      if (password.trim().length === 0) {
+        return "Enter your password.";
+      }
+
+      const passwordStrength = validatePasswordStrength(password);
+      if (!passwordStrength.isStrong) {
+        return passwordStrength.feedback[0] || "Password is not strong enough.";
+      }
     }
 
     return null;
   };
-
+ const router = useRouter();
   const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus(null);
-
+    setLoading(true);
     const validationError = validateForm();
     if (validationError) {
       setStatus(validationError);
@@ -129,6 +138,7 @@ function AuthModalContent({
     setIsSubmitting(true);
 
     try {
+     
       const endpoint = view === "login" ? "/api/auth/login" : "/api/auth/register";
       const payload =
         view === "login"
@@ -169,10 +179,14 @@ function AuthModalContent({
 
       onSuccess?.();
       onClose();
+     router.replace("/dashboard");
+     router.refresh();
+     
     } catch {
       setStatus("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -185,7 +199,13 @@ function AuthModalContent({
       className="relative w-full max-w-md overflow-hidden p-1 rounded-lg z-60"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="bg-zinc-800 rounded-lg p-8 max-h-[90vh] overflow-y-auto">
+     {
+      Loading? (
+        <div className="h-full w-full flex items-center justify-center">
+          <Loader className="animate-spin w-10 h-10" />
+        </div>
+      ):(
+        <div className="bg-zinc-800 rounded-lg p-8 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
           aria-label="Close modal"
@@ -208,7 +228,16 @@ function AuthModalContent({
           <p className="text-sm text-zinc-400">
             {view === "login" ? "Don't have an account?" : "Already have an account?"}
             <button
-              onClick={() => setView(view === "login" ? "signup" : "login")}
+              onClick={() => {
+                setStatus(null);
+                setFirstName("");
+                setLastName("");
+                setUsername("");
+                setEmail("");
+                setPassword("");
+                setTermsAccepted(false);
+                setView(view === "login" ? "signup" : "login");
+              }}
               className="font-semibold ml-2 text-white hover:underline transition-colors cursor-pointer"
               type="button"
             >
@@ -240,7 +269,7 @@ function AuthModalContent({
                       onChange={(event) => setFirstName(event.target.value)}
                       className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
                       placeholder="Jane"
-                      pattern="[A-Za-z][A-Za-z'-]{1,49}"
+                      // pattern="[A-Za-z][A-Za-z'-]{1,49}"
                       title="Use 2-50 letters. Apostrophes and hyphens are allowed."
                       required={view === "signup"}
                       aria-describedby="firstName-help"
@@ -278,7 +307,7 @@ function AuthModalContent({
                     onChange={(event) => setUsername(event.target.value)}
                     className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
                     placeholder="janedoe"
-                    pattern="[A-Za-z][A-Za-z0-9_]{2,14}"
+                    // pattern="[A-Za-z][A-Za-z0-9_]{2,14}"
                     title="Start with a letter. Use 3-15 letters, numbers, or underscores."
                     minLength={3}
                     maxLength={15}
@@ -299,7 +328,7 @@ function AuthModalContent({
                   onChange={(event) => setEmail(event.target.value)}
                   className="block w-full rounded-xl border border-zinc-800 py-3 px-4 text-white bg-zinc-950 placeholder:text-zinc-600 focus:ring-2 focus:ring-zinc-700 outline-none transition-all"
                   placeholder="jane@example.com"
-                  pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}"
+                  // pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}"
                   title="Enter a valid email address."
                   required
                   aria-describedby="email-help"
@@ -387,6 +416,7 @@ function AuthModalContent({
 
           <Button
             type="submit"
+            
             text={isSubmitting ? "Please wait..." : view === "login" ? "Log in" : "Create account"}
             fullWidth
             disabled={isSubmitting}
@@ -394,6 +424,8 @@ function AuthModalContent({
           />
         </form>
       </div>
+      )
+     }
     </motion.div>
   );
 }

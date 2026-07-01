@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { validatePasswordStrength, getPasswordStrengthLabel, getPasswordStrengthColor } from "@/app/lib/passwordValidator";
 import { AlertCircle, CheckCircle } from "lucide-react";
 
@@ -10,28 +9,9 @@ interface PasswordStrengthMeterProps {
 }
 
 export default function PasswordStrengthMeter({ password, showFeedback = true }: PasswordStrengthMeterProps) {
-  const [strengthResult, setStrengthResult] = useState({
-    isStrong: false,
-    score: 0,
-    feedback: [] as string[],
-    timeToGuess: '',
-  });
-
-  useEffect(() => {
-    if (password) {
-      const result = validatePasswordStrength(password);
-      setStrengthResult(result);
-    } else {
-      setStrengthResult({
-        isStrong: false,
-        score: 0,
-        feedback: [],
-        timeToGuess: '',
-      });
-    }
-  }, [password]);
-
   if (!password) return null;
+
+  const strengthResult = validatePasswordStrength(password);
 
   const strengthColor = getPasswordStrengthColor(strengthResult.score);
   const strengthLabel = getPasswordStrengthLabel(strengthResult.score);
@@ -66,7 +46,7 @@ export default function PasswordStrengthMeter({ password, showFeedback = true }:
         <div className="space-y-2">
           {strengthResult.feedback.map((item, index) => (
             <div key={index} className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
               <p className="text-xs text-zinc-400">{item}</p>
             </div>
           ))}
@@ -76,7 +56,7 @@ export default function PasswordStrengthMeter({ password, showFeedback = true }:
       {/* Success Message */}
       {strengthResult.isStrong && (
         <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
-          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
           <p className="text-xs font-medium text-green-400">Your password is strong and secure</p>
         </div>
       )}

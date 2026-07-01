@@ -25,7 +25,7 @@ export function sanitizeHtml(dirty: string): string {
     ALLOWED_ATTR: Object.values(ALLOWED_ATTRIBUTES).flat(),
     ALLOW_DATA_ATTR: false,
     ALLOW_UNKNOWN_PROTOCOLS: false,
-    DEFAULT_NAMESPACE: 'http://www.w3.org/1999/xhtml',
+  
   });
 }
 

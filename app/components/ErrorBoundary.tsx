@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface ErrorBoundaryProps {

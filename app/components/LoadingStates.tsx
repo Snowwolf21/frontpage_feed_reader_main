@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 
 interface SkeletonProps {
@@ -16,7 +15,7 @@ export function SkeletonLoader({ count = 3, height = 'h-12', className = '' }: S
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className={`${height} w-full bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded-lg animate-pulse`}
+          className={`${height} w-full bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded-lg animate-pulse`}
         />
       ))}
     </div>
@@ -26,10 +25,10 @@ export function SkeletonLoader({ count = 3, height = 'h-12', className = '' }: S
 export function CardSkeleton() {
   return (
     <div className="space-y-4" role="status" aria-label="Loading card">
-      <div className="h-40 bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded-2xl animate-pulse" />
+      <div className="h-40 bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded-2xl animate-pulse" />
       <div className="space-y-2">
-        <div className="h-4 w-3/4 bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded animate-pulse" />
-        <div className="h-4 w-full bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded animate-pulse" />
+        <div className="h-4 w-3/4 bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded animate-pulse" />
+        <div className="h-4 w-full bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 rounded animate-pulse" />
       </div>
     </div>
   );

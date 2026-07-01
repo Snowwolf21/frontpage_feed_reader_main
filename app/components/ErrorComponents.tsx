@@ -1,6 +1,4 @@
-"use client";
 
-import { useState, useEffect } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface ErrorStateProps {
@@ -35,7 +33,7 @@ export function ErrorMessage({ message }: { message: string }) {
       role="alert"
       className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30"
     >
-      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+      <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
       <p className="text-sm text-red-400">{message}</p>
     </div>
   );

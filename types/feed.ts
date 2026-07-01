@@ -21,7 +21,9 @@ export interface NormalizedItem {
   thumbnail: string | null;
   categories: string[];
   guid: string | null;
+  description?: string | null; // Add this line
 }
+
 
 // What our API returns for a full feed
 export interface FeedResponse {

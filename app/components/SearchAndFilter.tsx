@@ -1,177 +1,152 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { Search, X } from "lucide-react";
+import type { NormalizedItem } from "@/types/feed";
 
 interface SearchAndFilterProps {
-  items: any[];
-  searchFields?: string[];
-  onFilter?: (filtered: any[]) => void;
+  items: NormalizedItem[];
+  searchFields?: (keyof NormalizedItem)[];
+  onFilter?: (filtered: NormalizedItem[]) => void;
   placeholder?: string;
 }
 
 export function SearchAndFilter({
   items,
-  searchFields = ['title', 'description'],
+  // 1. FIXED: Replaced "description" with "summary" to match your interface
+  searchFields = ["title", "summary"], 
   onFilter,
-  placeholder = 'Search...',
+  placeholder = "Search...",
 }: SearchAndFilterProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-  // Memoized filtered results
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  // 2. FIXED: Extracts actual strings from the item.categories array
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(
+        items
+          .flatMap((item) => item.categories)
+          .filter((category): category is string => Boolean(category))
+      )
+    );
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      // Text search
-      const matchesSearch = searchTerm === '' ||
+      const matchesSearch =
+        normalizedSearch === "" ||
         searchFields.some((field) =>
-          String(item[field]).toLowerCase().includes(searchTerm.toLowerCase())
+          String(item[field] ?? "")
+            .toLowerCase()
+            .includes(normalizedSearch)
         );
 
-      // Category filter
-      const matchesCategory = selectedCategory === '' ||
-        item.category === selectedCategory;
+      // 3. FIXED: Checks if the selected category is inside the item's categories array
+      const matchesCategory =
+        selectedCategory === "" || 
+        item.categories.includes(selectedCategory);
 
-      // Tags filter
-      const matchesTags = selectedTags.length === 0 ||
-        (Array.isArray(item.tags) &&
-          selectedTags.some((tag) => item.tags.includes(tag)));
-
-      return matchesSearch && matchesCategory && matchesTags;
+      return matchesSearch && matchesCategory;
     });
-  }, [items, searchTerm, selectedTags, selectedCategory, searchFields]);
+  }, [
+    items,
+    normalizedSearch,
+    selectedCategory,
+    searchFields,
+  ]);
 
-  // Extract unique categories and tags from items
-  const categories = useMemo(
-    () => [...new Set(items.map((item) => item.category).filter(Boolean))],
-    [items]
-  );
-
-  const allTags = useMemo(
-    () => [
-      ...new Set(
-        items
-          .flatMap((item) => item.tags || [])
-          .filter(Boolean)
-      ),
-    ],
-    [items]
-  );
-
-  const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedTags([]);
-    setSelectedCategory('');
-  }, []);
-
-  const handleTagToggle = useCallback((tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  }, []);
-
-  const isFiltered = searchTerm !== '' || selectedTags.length > 0 || selectedCategory !== '';
-
-  // Trigger callback when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     onFilter?.(filteredItems);
   }, [filteredItems, onFilter]);
 
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm("");
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSelectedCategory("");
+  }, []);
+
+  const isFiltered = normalizedSearch !== "" || selectedCategory !== "";
+
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
+      {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+
         <input
           type="text"
+          name="searchInput"
+          id="searchInput"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Search"
+          aria-label="SearchInput"
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 py-2 pl-10 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+
         {searchTerm && (
           <button
             onClick={handleClearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
             aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-white"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         )}
       </div>
 
       {/* Filters */}
-      {(categories.length > 0 || allTags.length > 0) && (
+      {categories.length > 0 && (
         <div className="space-y-4">
-          {/* Category Filter */}
-          {categories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Category
-              </label>
-              <div className="flex gap-2 flex-wrap">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
+              Category
+            </label>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory("")}
+                className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                  selectedCategory === ""
+                    ? "bg-blue-500 text-white"
+                    : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                }`}
+              >
+                All
+              </button>
+
+              {categories.map((category) => (
                 <button
-                  onClick={() => setSelectedCategory('')}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    selectedCategory === ''
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                    selectedCategory === category
+                      ? "bg-blue-500 text-white"
+                      : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                   }`}
                 >
-                  All
+                  {category}
                 </button>
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* Tags Filter */}
-          {allTags.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Tags
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {allTags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                      selectedTags.includes(tag)
-                        ? 'bg-purple-500 text-white'
-                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Clear Filters Button */}
           {isFiltered && (
             <button
               onClick={handleClearFilters}
-              className="text-sm text-blue-400 hover:text-blue-300 underline"
+              className="text-sm text-blue-400 underline hover:text-blue-300"
             >
               Clear all filters
             </button>
@@ -181,13 +156,19 @@ export function SearchAndFilter({
 
       {/* Results Count */}
       <div className="text-sm text-zinc-400">
-        {isFiltered && (
-          <span>
-            Found <span className="font-semibold text-zinc-300">{filteredItems.length}</span> result
-            {filteredItems.length !== 1 ? 's' : ''}
-          </span>
-        )}
+        Showing{" "}
+        <span className="font-semibold text-zinc-300">
+          {filteredItems.length}
+        </span>{" "}
+        of {items.length} item{items.length !== 1 ? "s" : ""}
       </div>
+
+      {/* Empty State */}
+      {filteredItems.length === 0 && (
+        <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-6 text-center text-zinc-400">
+          No matching items found.
+        </div>
+      )}
     </div>
   );
 }

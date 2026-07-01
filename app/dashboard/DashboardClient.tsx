@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+// import jwt from "jsonwebtoken";
+// import { cookies } from "next/headers";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -43,6 +45,8 @@ type ArticleState = {
   read?: boolean;
   bookmarked?: boolean;
 };
+
+
 
 const GUEST_SUBSCRIPTIONS_KEY = "frontpage:guest-subscriptions";
 const GUEST_ARTICLE_STATES_KEY = "frontpage:guest-article-states";
@@ -155,11 +159,13 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
   const [categoryInput, setCategoryInput] = useState("General");
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
+
   const isGuest = !user;
 
   const refreshSession = async () => {
     setIsLoadingSession(true);
     try {
+    
       const response = await fetch("/api/auth/me");
       const data = await response.json();
       setUser(data.user || null);

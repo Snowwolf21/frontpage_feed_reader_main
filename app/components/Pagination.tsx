@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { NormalizedItem } from "@/types/feed";
+import React from "react";
 
 interface PaginationProps {
-  items: any[];
+  items: NormalizedItem[];
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
-  onItemsChange?: (items: any[]) => void;
+  onItemsChange?: (items: NormalizedItem[]) => void;
 }
 
 export function Pagination({
@@ -62,8 +64,8 @@ export function PaginationControls({
 }: PaginationControlsProps) {
   const pages = useMemo(() => {
     const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
+    const range: number[] = [];
+    const rangeWithDots: (string | number)[] = [];
     let l = 0;
 
     for (let i = 1; i <= totalPages; i++) {
