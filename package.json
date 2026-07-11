@@ -3,12 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "set -a; . ./.env.build; set +a; next build",
-    "build:production": "set -a; . ./.env.production; set +a; next build",
-    "start": "set -a; . ./.env.production; set +a; next start",
-    "start:production": "set -a; . ./.env.production; set +a; next start",
-    "lint": "eslint"
+  "dev": "next dev",
+  "build": "next build", 
+  "start": "next start",
+  "lint": "next lint"
   },
   "dependencies": {
     "@zxcvbn-ts/core": "^4.1.1",
