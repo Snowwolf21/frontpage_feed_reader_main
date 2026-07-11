@@ -12,7 +12,7 @@ interface ToastProps {
 
 export default function Toast({ message, type = 'info', duration = 5000, onClose }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+ const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     timeoutRef.current = setTimeout(() => {
@@ -55,7 +55,7 @@ export default function Toast({ message, type = 'info', duration = 5000, onClose
       aria-atomic="true"
       className={`fixed bottom-4 right-4 flex items-center gap-3 px-4 py-3 rounded-lg border ${bgColor} max-w-md z-50 animate-in fade-in slide-in-from-bottom-4 duration-300`}
     >
-      <Icon className={`w-5 h-5 ${textColor} flex-shrink-0`} />
+      <Icon className={`w-5 h-5 ${textColor} shrink-0`} />
       <p className={`text-sm font-medium ${textColor}`}>{message}</p>
     </div>
   );
