@@ -1,36 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
-/**
- * Hook to skip to main content (accessibility best practice)
- * Use with a skip link button near the top of your layout
- */
 export function useSkipToMain() {
   const mainRef = useRef<HTMLElement>(null);
 
-  const skipToMain = () => {
-    mainRef.current?.focus();
-    mainRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const skipToMain = useCallback(() => {
+    const element = mainRef.current;
+
+    if (!element) return;
+
+    const prefersReducedMotion =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    element.focus({ preventScroll: true });
+
+    element.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }, []);
+
+  return {
+    mainRef,
+    skipToMain,
   };
-
-  return { mainRef, skipToMain };
 }
-
-/**
- * Usage example:
- * 
- * const { mainRef, skipToMain } = useSkipToMain();
- * 
- * return (
- *   <>
- *     <a href="#main" onClick={(e) => { e.preventDefault(); skipToMain(); }} 
- *        className="sr-only focus:not-sr-only">
- *       Skip to main content
- *     </a>
- *     <main ref={mainRef} tabIndex={-1}>
- *       {children}
- *     </main>
- *   </>
- * );
- */

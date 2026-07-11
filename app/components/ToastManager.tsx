@@ -1,52 +1,45 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import Toast from "./Toast";
+import { useState, useCallback } from 'react';
 
-interface ToastManagerContextType {
-  addToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning', duration?: number) => void;
-  toasts: Array<{ id: string; message: string; type: 'success' | 'error' | 'info' | 'warning'; duration: number }>;
+// Define the available toast types
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+// Define the structure of a single toast item
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: ToastType;
+  duration: number;
 }
 
 export function useToastManager() {
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: 'success' | 'error' | 'info' | 'warning'; duration: number }>>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = useCallback(
-    (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration: number = 5000) => {
-      const id = Math.random().toString(36).substr(2, 9);
-      const newToast = { id, message, type, duration };
-      setToasts((prev) => [...prev, newToast]);
-
-      // Auto-remove toast after duration
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    },
-    []
-  );
-
+  // 1. Remove toast by filtering the state
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  return { toasts, addToast, removeToast };
-}
+  // 2. Add toast and set a self-contained timer to remove itself
+  const addToast = useCallback(
+    (message: string, type: ToastType = 'info', duration = 5000) => {
+      // Use crypto.randomUUID() or timestamp for safer unique keys
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2, 11) + Date.now();
 
-export function ToastContainer() {
-  const { toasts, removeToast } = useToastManager();
+      const newToast: ToastItem = { id, message, type, duration };
 
-  return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-md pointer-events-none">
-      {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
-        </div>
-      ))}
-    </div>
+      setToasts((prev) => [...prev, newToast]);
+
+      // Safely schedule removal
+      setTimeout(() => {
+        removeToast(id);
+      }, duration);
+    },
+    [removeToast]
   );
+
+  return { toasts, addToast, removeToast };
 }

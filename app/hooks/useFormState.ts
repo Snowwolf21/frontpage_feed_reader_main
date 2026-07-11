@@ -1,48 +1,82 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
-interface FormState {
+interface FormState<T> {
+  values: T;
+  errors: Partial<Record<keyof T, string>>;
+  touched: Partial<Record<keyof T, boolean>>;
   isSubmitting: boolean;
-  errors: Record<string, string>;
-  touched: Record<string, boolean>;
-  values: Record<string, any>;
 }
 
-export function useFormState(initialValues: Record<string, any> = {}) {
-  const [state, setState] = useState<FormState>({
-    isSubmitting: false,
+export function useFormState<T extends Record<string, unknown>>(
+  initialValues: T
+) {
+  // Capture the initial values only once
+  const [initialState] = useState(initialValues);
+
+  const [state, setState] = useState<FormState<T>>({
+    values: initialState,
     errors: {},
     touched: {},
-    values: initialValues,
+    isSubmitting: false,
   });
 
-  const setFieldValue = useCallback((field: string, value: any) => {
+  const setFieldValue = useCallback(
+    <K extends keyof T>(field: K, value: T[K]) => {
+      setState((prev) => ({
+        ...prev,
+        values: {
+          ...prev.values,
+          [field]: value,
+        },
+      }));
+    },
+    []
+  );
+
+  const setFieldError = useCallback(
+    <K extends keyof T>(field: K, error?: string) => {
+      setState((prev) => ({
+        ...prev,
+        errors: {
+          ...prev.errors,
+          [field]: error,
+        },
+      }));
+    },
+    []
+  );
+
+  const setFieldTouched = useCallback(
+    <K extends keyof T>(field: K, touched = true) => {
+      setState((prev) => ({
+        ...prev,
+        touched: {
+          ...prev.touched,
+          [field]: touched,
+        },
+      }));
+    },
+    []
+  );
+
+  const setErrors = useCallback(
+    (errors: Partial<Record<keyof T, string>>) => {
+      setState((prev) => ({
+        ...prev,
+        errors,
+      }));
+    },
+    []
+  );
+
+  const setValues = useCallback((values: Partial<T>) => {
     setState((prev) => ({
       ...prev,
       values: {
         ...prev.values,
-        [field]: value,
-      },
-    }));
-  }, []);
-
-  const setFieldError = useCallback((field: string, error: string) => {
-    setState((prev) => ({
-      ...prev,
-      errors: {
-        ...prev.errors,
-        [field]: error,
-      },
-    }));
-  }, []);
-
-  const setFieldTouched = useCallback((field: string, touched: boolean = true) => {
-    setState((prev) => ({
-      ...prev,
-      touched: {
-        ...prev.touched,
-        [field]: touched,
+        ...values,
       },
     }));
   }, []);
@@ -56,27 +90,21 @@ export function useFormState(initialValues: Record<string, any> = {}) {
 
   const resetForm = useCallback(() => {
     setState({
-      isSubmitting: false,
+      values: initialState,
       errors: {},
       touched: {},
-      values: initialValues,
+      isSubmitting: false,
     });
-  }, [initialValues]);
-
-  const setErrors = useCallback((errors: Record<string, string>) => {
-    setState((prev) => ({
-      ...prev,
-      errors,
-    }));
-  }, []);
+  }, [initialState]);
 
   return {
     ...state,
     setFieldValue,
     setFieldError,
     setFieldTouched,
-    setSubmitting,
     setErrors,
+    setValues,
+    setSubmitting,
     resetForm,
   };
 }
