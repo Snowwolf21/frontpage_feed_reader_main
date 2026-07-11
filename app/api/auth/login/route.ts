@@ -4,10 +4,22 @@ import User from '@/app/model/userModel';
 import { comparePassword } from '@/utils/password';
 import jwt from 'jsonwebtoken';
 
+import { loginLimiter } from '@/app/lib/rateLimiter';
+import { createIdentifier } from '@/app/lib/rateLimiter/utils';
+
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const { email, password } = await req.json();
+
+    const key = await createIdentifier('login')
+
+    const { success } = await loginLimiter.limit(key);
+
+    if (!success) {
+      return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });
+    }
+
+    await connectDB();
 
     if (!email || !password) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
