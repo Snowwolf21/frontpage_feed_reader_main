@@ -3,6 +3,11 @@ import connectDB from '@/app/config/db';
 import Subscription from '@/app/model/subscriptionModel';
 import { getUserIdFromRequest } from '@/utils/auth';
 import Parser from 'rss-parser';
+import {
+  rssReadLimiter,
+  rssSubscribeLimiter,
+  rssUnsubscribeLimiter,
+} from "@/app/lib/rateLimiter";
 
 const parser = new Parser();
 
@@ -12,6 +17,22 @@ export async function GET(req: NextRequest) {
     const userId = getUserIdFromRequest(req);
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const identifier = `subscription-read:${userId}`;
+
+    const { success } = await rssReadLimiter.limit(identifier);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          message:
+            "Too many subscription requests. Please try again later.",
+        },
+        {
+          status: 429,
+        }
+      );
     }
 
     const subscriptions = await Subscription.find({ userId });
@@ -33,6 +54,22 @@ export async function POST(req: NextRequest) {
     const { feedUrl, category } = await req.json();
     if (!feedUrl) {
       return NextResponse.json({ message: 'Feed URL is required' }, { status: 400 });
+    }
+
+    const identifier = `subscription-create:${userId}`;
+
+    const { success } = await rssSubscribeLimiter.limit(identifier);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          message:
+            "Too many subscription creation requests. Please try again later.",
+        },
+        {
+          status: 429,
+        }
+      );
     }
 
     // Try parsing the feed to validate it and auto-fill metadata
@@ -77,6 +114,22 @@ export async function DELETE(req: NextRequest) {
     const userId = getUserIdFromRequest(req);
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const identifier = `subscription-delete:${userId}`;
+
+    const { success } = await rssUnsubscribeLimiter.limit(identifier);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          message:
+            "Too many subscription deletion requests. Please try again later.",
+        },
+        {
+          status: 429,
+        }
+      );
     }
 
     const url = new URL(req.url);

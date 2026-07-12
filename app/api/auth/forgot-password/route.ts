@@ -4,15 +4,18 @@ import User from '@/app/model/userModel';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '@/utils/sendEmail';
 
-import { authLimiter } from "@/app/lib/rateLimiter";
+import { forgotPasswordLimiter } from "@/app/lib/rateLimiter/auth";
 import { createIdentifier } from "@/app/lib/rateLimiter/utils";
 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
     
-    const key = await createIdentifier('forgot-password', email)
-    const { success } = await authLimiter.limit(key);
+    
+    const identifier = email
+      ? `forgot-password:${email}`
+      : createIdentifier("forgot-password", req);
+    const { success } = await forgotPasswordLimiter.limit(identifier);
     if (!success) {
       return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });
     }

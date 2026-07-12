@@ -4,18 +4,41 @@ import User from '@/app/model/userModel';
 import jwt from 'jsonwebtoken';
 import { hashPassword } from '@/utils/password';
 import { sendEmail } from '@/utils/sendEmail';
-
+import crypto from "crypto";
+import { resetPasswordLimiter } from '@/app/lib/rateLimiter/auth';
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
-    const { token, password } = await req.json();
+
+    const body = await req.json();
+
+if (typeof body !== "object" || body === null) {
+  return NextResponse.json(
+    { message: "Invalid request body" },
+    { status: 400 }
+  );
+}
+
+    const { token, password } = body;
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const identifier = `"reset-password": ${tokenHash}`;
+    const { success } = await resetPasswordLimiter.limit(identifier);
+    if (!success) {
+      return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });
+    }
+
+   
 
     if (!token || !password) {
       return NextResponse.json({ message: 'Token and password are required' }, { status: 400 });
     }
 
-    if (password.length < 6 || password.length > 12) {
-      return NextResponse.json({ message: 'Password must be between 6 and 12 characters' }, { status: 400 });
+    if (password.length < 8 || password.length >= 64) {
+      return NextResponse.json({ message: 'Password must be between 8 and 64 characters' }, { status: 400 });
     }
 
     const jwt_secret = process.env.JWT_SECRET;
@@ -34,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (!decoded || !decoded.id) {
       return NextResponse.json({ message: 'Invalid token payload' }, { status: 400 });
     }
-
+    await connectDB();
     const user = await User.findOne({ _id: decoded.id });
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });

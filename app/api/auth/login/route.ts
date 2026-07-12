@@ -11,9 +11,11 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
-    const key = await createIdentifier('login')
+    const identifier = email
+      ? `login:${email}`
+      : createIdentifier("login", req);
 
-    const { success } = await loginLimiter.limit(key);
+    const { success } = await loginLimiter.limit(identifier);
 
     if (!success) {
       return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });

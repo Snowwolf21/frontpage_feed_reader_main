@@ -3,6 +3,8 @@ import connectDB from '@/app/config/db';
 import Subscription from '@/app/model/subscriptionModel';
 import { getUserIdFromRequest } from '@/utils/auth';
 import { parser, validateHttpUrl } from '@/app/api/feeds/_lib/feedParser';
+import { opmlImportLimiter } from '@/app/lib/rateLimiter/opml';
+import { createIdentifier } from '@/app/lib/rateLimiter/utils';
 
 type ImportedFeed = {
   title: string;
@@ -45,12 +47,23 @@ function parseOpml(xml: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
-    const userId = getUserIdFromRequest(req);
+    
+        await connectDB();
+        const userId = getUserIdFromRequest(req);
+    
+        if (!userId) {
+          return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
 
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const identifier = userId
+      ? `opml-import:${userId}`
+      : createIdentifier("opml-import", req);
+
+    const { success } = await opmlImportLimiter.limit(identifier);
+    if (!success) {
+      return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });
     }
+
 
     const formData = await req.formData();
     const file = formData.get('file');
