@@ -27,6 +27,7 @@ export interface PasswordStrengthResult {
  * @param password - Password to validate
  * @returns PasswordStrengthResult with detailed feedback
  */
+
 export function validatePasswordStrength(password: string): PasswordStrengthResult {
   const feedback: string[] = [];
   let score = 0;
@@ -76,7 +77,10 @@ export function validatePasswordStrength(password: string): PasswordStrengthResu
 
   // Use zxcvbn for advanced entropy analysis
   const zxcvbnResult = zxcvbn(password);
-  const timeToGuess = estimateGuessTime(zxcvbnResult.crack_times_seconds.online_no_throttling_10_per_second);
+  const timeToGuess = estimateGuessTime(
+  zxcvbnResult.crack_times_seconds.online_no_throttling_10_per_second as number
+);
+
 
   // Adjust score based on zxcvbn analysis
   const zxcvbnScore = zxcvbnResult.score;

@@ -3,8 +3,8 @@ import connectDB from "@/app/config/db";
 import ArticleState from "@/app/model/articleStateModel";
 import { getUserIdFromRequest } from "@/utils/auth";
 
-import { starLimiter } from "@/lib/rateLimiter/star";
-import { createIdentifier } from "@/app/lib/rateLimiter/utils";
+import { starLimiter } from "../../../lib/rateLimiter/star";
+import { createIdentifier } from "../../../lib/rateLimiter/utils";
 
 export async function PATCH(req: NextRequest) {
   try {
