@@ -20,7 +20,7 @@ export const Header = ({
   text = "Frontpage",
   leftContent,
   rightContent,
-  showDefaultAuth = true,
+  
 }: HeaderProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "signup">("login");
@@ -38,7 +38,7 @@ export const Header = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Logo />
-            <span className={`text-2xl font-bold tracking-wider font-sans ${showDefaultAuth ? 'text-zinc-900': 'text-zinc-50'}`}>
+            <span className={`text-2xl font-bold tracking-wider font-sans  text-zinc-50`}>
               {text}
             </span>
           </div>
@@ -47,11 +47,11 @@ export const Header = ({
         
         <div className="flex items-center gap-4">
           {rightContent}
-          {showDefaultAuth && !rightContent && (
+          {!rightContent && (
             <div className="flex items-center gap-4">
               <button 
                 onClick={openLogin}
-                className="px-4 py-2 text-md font-semibold text-zinc-800  border rounded-md border-zinc-800 bg-zinc-300 hover:text-zinc-50 hover:bg-zinc-500 transition-colors cursor-pointer"
+                className="px-4 py-2 text-md font-semibold text-zinc-800  border rounded-md border-zinc-800 bg-slate-400  active:bg-slate-700/60 active:scale-95 sm:hover:text-slate-50 sm:hover:bg-slate-700/90 sm:hover:border-zinc-200 transition-colors duration-300 cursor-pointer"
               >
                 Log in
               </button>
