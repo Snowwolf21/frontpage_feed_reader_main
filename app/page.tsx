@@ -142,7 +142,7 @@ export default function Home() {
                 {card.svg}
               </div>  
               <h3 className="font-bold text-zinc-100 text-lg mb-3 tracking-tight">{card.title}</h3>
-              <p className="text-sm text-zinc-400 leading-relaxed font-light">
+              <p className="text-sm text-zinc-200 leading-relaxed font-light">
                 {card.description}
               </p>
             </div>
@@ -155,7 +155,7 @@ export default function Home() {
           <p className="text-zinc-400 text-sm md:text-base font-light mb-8">Choose the pipeline velocity that aligns with your daily reading demands.</p>
           
           {/* Custom Segmented Billing Toggle Switch */}
-          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-800/80 border border-slate-700 mb-12">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-700 border border-slate-700 mb-12">
             <button 
               onClick={() => setBillingCycle("monthly")}
               className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${billingCycle === "monthly" ? "bg-slate-900 text-white shadow-md" : "text-zinc-400 hover:text-zinc-200"}`}
@@ -197,20 +197,20 @@ export default function Home() {
 
                   <div className="text-4xl font-black font-mono tracking-tight mt-4">
                     ${currentPrice}
-                    {currentPrice > 0 && <span className="text-xs font-normal text-zinc-500"> / month</span>}
+                    {currentPrice > 0 && <span className="text-sm font-medium text-zinc-200"> / month</span>}
                   </div>
 
-                  <p className="text-xs text-zinc-500 mt-2">{tier.description}</p>
-                  <div className="h-px bg-zinc-900 my-6" />
+                  <p className="text-xs text-zinc-200 mt-2">{tier.description}</p>
+                  <div className="h-px bg-zinc-400 my-6" />
 
                   {/* Nested Dynamic Feature List Injection */}
                   <ul className="text-xs space-y-2.5">
                     {tier.features.map((feature, idx) => (
                       <li 
                         key={idx} 
-                        className={`flex items-center gap-2 ${tier.highlighted ? "text-zinc-200" : "text-zinc-400"}`}
+                        className={`flex items-center gap-2 ${tier.highlighted ? "text-zinc-100" : "text-zinc-200"}`}
                       >
-                        <span className={tier.highlighted ? "text-slate-400" : "text-zinc-500"}>✓</span>
+                        <span className={tier.highlighted ? "text-zinc-200" : "text-zinc-300"}>✓</span>
                         {feature}
                       </li>
                     ))}
