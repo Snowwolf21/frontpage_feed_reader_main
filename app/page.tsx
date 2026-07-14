@@ -12,9 +12,6 @@ import {
   DownloadIcon
 } from "../components/ui/svg";
 
-// 📦 STATIC CONTENT CONFIGURATIONS (Keeps the component body clean and maintainable)
-const BRAND_LOGOS = ["VERCEL", "LINEAR", "STRIPE", "SUPABASE"] as const;
-
 const FEATURES = [
   {
     title: "Infinite Feeds",
@@ -57,9 +54,9 @@ const PRICING_TIERS = [
     description: "Designed for advanced operators and research analysts.",
     features: [
       "Unlimited active feed collections",
-      "Real-time web socket updates",
-      "AI-assisted article summaries",
-      "Cryptographic offline support"
+      "OPML Import and Export pipeline",
+      "Full Article bookmarking system",
+      "Priority customer assistance"
     ],
     highlighted: true,
   }
@@ -121,14 +118,12 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* 1. Dynamic Social Proof / Trust Matrix */}
-        <div className="w-full max-w-4xl mb-32 opacity-40 grayscale transition-opacity hover:opacity-70 duration-500">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-6 font-semibold">Powering parsing workflows for operators at</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-16 gap-y-6 text-sm font-bold tracking-wider">
-            {BRAND_LOGOS.map((brand) => (
-              <span key={brand}>{brand}</span>
-            ))}
-          </div>
+        {/* 1. Brand Value Proposition Statement */}
+        <div className="w-full max-w-4xl mb-32 opacity-80 transition-opacity duration-500">
+          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-4 font-semibold">Our Philosophy</p>
+          <p className="text-zinc-400 max-w-2xl mx-auto text-sm leading-relaxed font-light">
+            We believe that reading should be clean, secure, and under your control. Frontpage is built with no tracking, no algorithms, and direct feed access.
+          </p>
         </div>
 
         {/* 2. Dynamic Core Product Grid Interface */}

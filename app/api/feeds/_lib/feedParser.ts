@@ -87,6 +87,33 @@ export function normalizeItem(item: Parser.Item & CustomItem): NormalizedItem {
   };
 }
 
+// Private / reserved IP ranges that must never be fetched from the server side.
+// Prevents SSRF attacks targeting cloud metadata services, internal networks, etc.
+const PRIVATE_IP_PATTERN =
+  /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.|::1$|fd[0-9a-f]{2}:|fc[0-9a-f]{2}:)/i;
+
+/** Validates URL format AND ensures the hostname is not a private/loopback address. */
+export async function validateSafeUrl(
+  raw: string
+): Promise<{ ok: true; url: URL } | { ok: false; message: string }> {
+  const httpCheck = validateHttpUrl(raw);
+  if (!httpCheck.ok) return httpCheck;
+
+  const { hostname } = httpCheck.url;
+
+  // Block bare IP addresses that are obviously private without DNS resolution
+  if (PRIVATE_IP_PATTERN.test(hostname)) {
+    return { ok: false, message: 'Requests to private or reserved IP addresses are not allowed.' };
+  }
+
+  // Block localhost by name
+  if (hostname === 'localhost' || hostname.endsWith('.local')) {
+    return { ok: false, message: 'Requests to localhost or local network hosts are not allowed.' };
+  }
+
+  return httpCheck;
+}
+
 export function validateHttpUrl(raw: string): { ok: true; url: URL } | { ok: false; message: string } {
   try {
     // Standardized WHATWG URL Constructor validation engine

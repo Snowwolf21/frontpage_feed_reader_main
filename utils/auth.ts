@@ -8,8 +8,8 @@ export function getUserIdFromRequest(req: NextRequest): string | null {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
         return decoded.id;
-    } catch (err) {
-        console.log("error",err);
+    } catch {
+        // Intentionally silent — invalid/expired tokens are expected in normal operation
         return null;
     }
 }

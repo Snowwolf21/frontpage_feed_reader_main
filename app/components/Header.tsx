@@ -6,21 +6,15 @@ import AuthModal from "./AuthModal";
 
 
 interface HeaderProps {
-  logo?: ReactNode;
   text?: string;
   leftContent?: ReactNode;
   rightContent?: ReactNode;
-  className?: string;
-  textClassName?: string;
-  containerClassName?: string;
-  showDefaultAuth?: boolean;
 }
 
 export const Header = ({
   text = "Frontpage",
   leftContent,
   rightContent,
-  
 }: HeaderProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "signup">("login");

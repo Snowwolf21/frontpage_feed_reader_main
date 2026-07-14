@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   FeedPreviewResponse,
   parser,
-  validateHttpUrl,
+  validateSafeUrl,
 } from "../_lib/feedParser";
 
 import { feedPreviewLimiter } from "@/app/lib/rateLimiter/feed";
@@ -28,7 +28,7 @@ export async function GET(
       );
     }
 
-    const validation = validateHttpUrl(raw);
+    const validation = await validateSafeUrl(raw);
 
     if (!validation.ok) {
       return NextResponse.json(

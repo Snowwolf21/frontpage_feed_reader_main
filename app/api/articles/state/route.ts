@@ -107,13 +107,16 @@ export async function PATCH(req: NextRequest) {
       typeof articleId !== "string"
     ) {
       return NextResponse.json(
-        {
-          message:
-            "feedUrl and articleId are required",
-        },
-        {
-          status: 400,
-        }
+        { message: "feedUrl and articleId are required" },
+        { status: 400 }
+      );
+    }
+
+    // Prevent storage abuse from adversarial RSS feeds with very long GUIDs
+    if (feedUrl.length > 2048 || articleId.length > 512) {
+      return NextResponse.json(
+        { message: "feedUrl or articleId exceeds maximum allowed length" },
+        { status: 400 }
       );
     }
 

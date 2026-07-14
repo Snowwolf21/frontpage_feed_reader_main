@@ -5,11 +5,13 @@ import {
   classifyError,
   FeedResponse,
   normalizeItem,
-  validateHttpUrl,
+  validateSafeUrl,
 } from "../_lib/feedParser";
 
 import { feedFetchLimiter } from "@/app/lib/rateLimiter/feed";
 import Parser from "rss-parser";
+
+const MAX_FEED_BYTES = 5 * 1024 * 1024; // 5 MB hard cap — prevents OOM via huge feeds
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const raw = req.nextUrl.searchParams.get("url");
@@ -21,24 +23,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const validation = validateHttpUrl(raw);
+  // SSRF protection: block private/loopback IPs and local hostnames
+  const validation = await validateSafeUrl(raw);
   if (!validation.ok) {
-    return NextResponse.json(
-      { error: validation.message },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: validation.message }, { status: 400 });
   }
 
-  // 1. Safe String-Based Key Extraction for the Rate Limiter
-  const forwardedFor = req.headers.get('x-forwarded-for');
-  const realtimeIp = req.headers.get('x-real-ip');
-  const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : realtimeIp ?? '127.0.0.1';
+  // Rate limiting — prefer x-real-ip (trusted Vercel proxy) over x-forwarded-for (spoofable)
+  const clientIp =
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    "127.0.0.1";
 
-  const urlHash = crypto
-    .createHash("sha256")
-    .update(raw)
-    .digest("hex");
-
+  const urlHash = crypto.createHash("sha256").update(raw).digest("hex");
   const identifier = `feed-fetch:${clientIp}:${urlHash}`;
 
   const { success } = await feedFetchLimiter.limit(identifier);
@@ -50,28 +47,69 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    // 2. Fetch the XML raw text directly via modern web platform APIs
     const fetchResponse = await fetch(raw, {
       method: "GET",
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml, application/atom+xml, text/xml, application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Cache-Control': 'no-cache',
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        Accept:
+          "application/rss+xml, application/atom+xml, text/xml, application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Cache-Control": "no-cache",
       },
-      signal: AbortSignal.timeout(7000), // Strict 7-second runtime ceiling
+      signal: AbortSignal.timeout(7000), // 7-second ceiling
     });
 
     if (!fetchResponse.ok) {
       return NextResponse.json(
-        { error: `Remote feed server returned a non-success status code: ${fetchResponse.status}` },
+        {
+          error: `Remote feed server returned status ${fetchResponse.status}`,
+        },
         { status: fetchResponse.status === 404 ? 404 : 502 }
       );
     }
 
-    const xmlText = await fetchResponse.text();
+    // Enforce 5MB body size limit to prevent OOM from adversarial feeds
+    const contentLength = fetchResponse.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_FEED_BYTES) {
+      return NextResponse.json(
+        { error: "Feed exceeds the maximum allowed size of 5 MB." },
+        { status: 413 }
+      );
+    }
 
-    // 3. Parse the data strings locally using purely string-bound execution blocks
+    // Stream body with manual byte counting — catches servers that lie about content-length
+    const reader = fetchResponse.body?.getReader();
+    if (!reader) {
+      return NextResponse.json({ error: "Empty feed response." }, { status: 502 });
+    }
+
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_FEED_BYTES) {
+        reader.cancel();
+        return NextResponse.json(
+          { error: "Feed exceeds the maximum allowed size of 5 MB." },
+          { status: 413 }
+        );
+      }
+      chunks.push(value);
+    }
+
+    const xmlText = new TextDecoder().decode(
+      chunks.reduce((acc, chunk) => {
+        const merged = new Uint8Array(acc.length + chunk.length);
+        merged.set(acc, 0);
+        merged.set(chunk, acc.length);
+        return merged;
+      }, new Uint8Array(0))
+    );
+
     const safeParser = new Parser();
     const feed = await safeParser.parseString(xmlText);
 
@@ -82,25 +120,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       feedUrl: feed.feedUrl || raw,
       image: feed.image?.url || null,
       lastUpdated: feed.lastBuildDate || null,
-      items: (feed.items || [])
-        .slice(0, 50)
-        .map(normalizeItem),
+      items: (feed.items || []).slice(0, 50).map(normalizeItem),
     };
 
     return NextResponse.json(response);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorCode = err && typeof err === 'object' && 'code' in err ? (err as Record<string, unknown>).code : '';
+    const isTimeout =
+      (err instanceof Error && err.name === "TimeoutError") ||
+      errorMessage.includes("timeout");
 
-    // Handle connection timeout errors gracefully
-    if (errorMessage.includes('timeout') || errorCode === 'ECONNTIMEOUT' || (err instanceof Error && err.name === 'TimeoutError')) {
+    if (isTimeout) {
       return NextResponse.json(
-        { error: "The remote feed server took too long to respond. Connection aborted." },
+        { error: "The remote feed server took too long to respond." },
         { status: 504 }
       );
     }
 
-    // Pass the remaining typed errors through your custom adapter
     const { status, message } = classifyError(err);
     return NextResponse.json({ error: message }, { status });
   }

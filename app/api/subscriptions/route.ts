@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/app/config/db';
 import Subscription from '@/app/model/subscriptionModel';
 import { getUserIdFromRequest } from '@/utils/auth';
-import Parser from 'rss-parser';
+import { validateSafeUrl } from '@/app/api/feeds/_lib/feedParser';
 import {
   rssReadLimiter,
   rssSubscribeLimiter,
-  rssUnsubscribeLimiter,
 } from "@/app/lib/rateLimiter";
 
-const parser = new Parser();
+
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,7 +35,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const subscriptions = await Subscription.find({ userId });
+    // Projection: exclude __v from response — don't expose internals
+    const subscriptions = await Subscription.find({ userId }).lean().select('-__v');
     return NextResponse.json({ subscriptions }, { status: 200 });
   } catch (error) {
     console.error('Get subscriptions error:', error);
@@ -72,17 +73,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Try parsing the feed to validate it and auto-fill metadata
-    let feedMeta;
+    // SSRF protection: validate URL isn't pointing at internal network
+    const urlValidation = await validateSafeUrl(feedUrl);
+    if (!urlValidation.ok) {
+      return NextResponse.json({ message: urlValidation.message }, { status: 400 });
+    }
+
+    const feedMeta = { title: '', link: '', description: '' };
     try {
-      feedMeta = await parser.parseURL(feedUrl);
-    } catch (err) {
-      console.error(`Failed to parse feed at ${feedUrl}:`, err);
-      return NextResponse.json({ message: 'Invalid RSS/Atom feed URL or feed is offline' }, { status: 400 });
+      const feedRes = await fetch(feedUrl, {
+        headers: { Accept: 'application/rss+xml, text/xml, */*' },
+        signal: AbortSignal.timeout(7000),
+      });
+      if (feedRes.ok) {
+        const Parser = (await import('rss-parser')).default;
+        const parser = new Parser();
+        const text = await feedRes.text();
+        const parsed = await parser.parseString(text);
+        feedMeta.title = parsed.title || '';
+        feedMeta.link = parsed.link || '';
+        feedMeta.description = parsed.description || '';
+      }
+    } catch {
+      // Non-fatal — we still save with a minimal title
     }
 
     const title = feedMeta.title || 'Untitled Feed';
-    const siteUrl = feedMeta.link || '';
+    const siteUrl = feedMeta.link || urlValidation.url.origin;
     const description = feedMeta.description || '';
 
     // Check if duplicate
@@ -108,45 +125,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
-  try {
-    await connectDB();
-    const userId = getUserIdFromRequest(req);
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const identifier = `subscription-delete:${userId}`;
-
-    const { success } = await rssUnsubscribeLimiter.limit(identifier);
-
-    if (!success) {
-      return NextResponse.json(
-        {
-          message:
-            "Too many subscription deletion requests. Please try again later.",
-        },
-        {
-          status: 429,
-        }
-      );
-    }
-
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ message: 'Subscription ID is required' }, { status: 400 });
-    }
-
-    const deletedSub = await Subscription.findOneAndDelete({ _id: id, userId });
-    if (!deletedSub) {
-      return NextResponse.json({ message: 'Subscription not found or unauthorized' }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: 'Unsubscribed successfully' }, { status: 200 });
-  } catch (error) {
-    console.error('Delete subscription error:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
-}
+// DELETE is handled by /api/subscriptions/[id]/route.ts
+// The route-level DELETE was removed — it used a query param (?id=) which
+// never matched how DashboardClient calls DELETE /api/subscriptions/:id

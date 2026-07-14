@@ -1,88 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import connectDB from '@/app/config/db';
 import User from '@/app/model/userModel';
-import jwt from 'jsonwebtoken';
 import { hashPassword } from '@/utils/password';
 import { sendEmail } from '@/utils/sendEmail';
-import crypto from "crypto";
 import { resetPasswordLimiter } from '@/app/lib/rateLimiter/auth';
+import { createIdentifier } from '@/app/lib/rateLimiter/utils';
+
 export async function POST(req: NextRequest) {
   try {
-
     const body = await req.json();
 
-if (typeof body !== "object" || body === null) {
-  return NextResponse.json(
-    { message: "Invalid request body" },
-    { status: 400 }
-  );
-}
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+    }
 
     const { token, password } = body;
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-    const identifier = `"reset-password": ${tokenHash}`;
-    const { success } = await resetPasswordLimiter.limit(identifier);
-    if (!success) {
-      return NextResponse.json({ message: 'Too many requests, please try again later' }, { status: 429 });
-    }
-
-   
-
-    if (!token || !password) {
+    if (!token || typeof token !== 'string' || !password || typeof password !== 'string') {
       return NextResponse.json({ message: 'Token and password are required' }, { status: 400 });
     }
 
-    if (password.length < 8 || password.length >= 64) {
-      return NextResponse.json({ message: 'Password must be between 8 and 64 characters' }, { status: 400 });
+    if (password.length < 12 || password.length > 68) {
+      return NextResponse.json(
+        { message: 'Password must be between 12 and 68 characters' },
+        { status: 400 }
+      );
     }
 
-    const jwt_secret = process.env.JWT_SECRET;
-    if (!jwt_secret) {
-      console.error('JWT_SECRET is not defined in environment variables');
-      return NextResponse.json({ message: 'Server configuration error' }, { status: 500 });
+    // Rate-limit by IP to prevent brute-forcing token space
+    const identifier = createIdentifier('reset-password', req);
+    const { success } = await resetPasswordLimiter.limit(identifier);
+    if (!success) {
+      return NextResponse.json(
+        { message: 'Too many requests, please try again later' },
+        { status: 429 }
+      );
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwt_secret) as { id: string };
-    } catch {
-      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 400 });
-    }
+    // Hash the incoming raw token to compare against the stored hash
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    if (!decoded || !decoded.id) {
-      return NextResponse.json({ message: 'Invalid token payload' }, { status: 400 });
-    }
     await connectDB();
-    const user = await User.findOne({ _id: decoded.id });
+
+    // Atomically find the user by hashed token and check expiry — one-time use
+    const user = await User.findOne({
+      passwordResetToken: tokenHash,
+      passwordResetExpires: { $gt: new Date() },
+    }).select('+passwordResetToken +passwordResetExpires');
+
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json(
+        { message: 'This password reset link is invalid or has expired. Please request a new one.' },
+        { status: 400 }
+      );
     }
 
-    // Await the asynchronous password hashing
     const hashedPassword = await hashPassword(password);
-    user.password = hashedPassword;
-    await user.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    // Atomically update password AND clear the token fields so it cannot be reused
+    await User.updateOne(
+      { _id: user._id, passwordResetToken: tokenHash },
+      {
+        $set: { password: hashedPassword },
+        $unset: { passwordResetToken: 1, passwordResetExpires: 1 },
+      }
+    );
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
     await sendEmail(
       user.email,
-      'Password reset successful',
-      'Your password has been reset successfully',
+      'Your Frontpage password has been reset',
+      'Your password has been reset successfully.',
       `
         <h1>Password Reset Successful</h1>
-        <p>Your password has been reset successfully</p>
-        <p>You can now log in using your new password:</p>
-        <a href="${frontendUrl}">Login</a>
+        <p>Your Frontpage account password has been updated successfully.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+        <p><a href="${appUrl}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;">Log In</a></p>
       `
     );
 
-    return NextResponse.json({ message: 'Password reset successful' }, { status: 200 });
+    return NextResponse.json({ message: 'Password reset successfully. You can now log in.' }, { status: 200 });
   } catch (error) {
     console.error('Reset password error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

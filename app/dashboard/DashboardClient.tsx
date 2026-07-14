@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Bookmark,
   Check,
@@ -21,34 +21,13 @@ import {
   X,
 } from "lucide-react";
 import AuthModal from "@/app/components/AuthModal";
-import type { Feed, SampleFeeds } from "@/app/components/FeedDisplay";
-import type { FeedResponse, NormalizedItem } from "@/app/api/feeds/_lib/feedParser";
+import type { SampleFeeds } from "@/app/components/FeedDisplay";
+import type { NormalizedItem } from "@/app/api/feeds/_lib/feedParser";
 import Logo from "@/components/ui/logo";
+import { useStore } from "@/app/store/useStore";
+import type { Subscription } from "@/app/store/useStore";
 
-type UserProfile = {
-  _id?: string;
-  id?: string;
-  firstName?: string;
-  lastName?: string;
-  username?: string;
-  email?: string;
-};
-
-type Subscription = Feed & {
-  _id?: string;
-  category: string;
-};
-
-type ArticleState = {
-  read?: boolean;
-  bookmarked?: boolean;
-};
-
-const GUEST_SUBSCRIPTIONS_KEY = "frontpage:guest-subscriptions";
-const GUEST_ARTICLE_STATES_KEY = "frontpage:guest-article-states";
 const THEME_KEY = "frontpage:theme";
-const FEED_URL_REGEX = /^https?:\/\/(?:[\w-]+\.)+[\w-]{2,}(?::\d{2,5})?(?:\/[^\s]*)?$/i;
-const CATEGORY_REGEX = /^[A-Za-z0-9][A-Za-z0-9 &/_-]{1,39}$/;
 
 function flattenSampleFeeds(sampleFeeds: SampleFeeds): Subscription[] {
   return sampleFeeds.categories.flatMap((category) =>
@@ -63,14 +42,23 @@ function articleKey(feedUrl: string, article: NormalizedItem) {
   return `${feedUrl}::${article.guid || article.link || article.title}`;
 }
 
-function getArticleId(article: NormalizedItem) {
-  return article.guid || article.link || article.title;
+/** Escapes HTML special chars so user-controlled strings are safe in innerHTML. */
+function escapeHtml(str: string | null) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
+/** Strips all HTML tags to produce plain text (used for article list snippet). */
 function stripHtml(html: string | null) {
   if (!html) return "";
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
+
 
 function sanitizeArticleHtml(html: string | null) {
   if (!html) return "";
@@ -119,50 +107,64 @@ function sanitizeArticleHtml(html: string | null) {
 
 export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFeeds }) {
   const sampleSubscriptions = useMemo(() => flattenSampleFeeds(sampleFeeds), [sampleFeeds]);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoadingSession, setIsLoadingSession] = useState(true);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [activeCategory, setActiveCategory] = useState("All Feeds");
-  const [selectedFeedUrl, setSelectedFeedUrl] = useState("");
-  const [search, setSearch] = useState("");
-  const [feedData, setFeedData] = useState<FeedResponse | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState<NormalizedItem | null>(null);
-  const [articleStates, setArticleStates] = useState<Record<string, ArticleState>>({});
-  const [isLoadingFeed, setIsLoadingFeed] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [feedUrlInput, setFeedUrlInput] = useState("");
-  const [categoryInput, setCategoryInput] = useState("General");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
+
+  // Bind Zustand Store state & actions
+  const {
+    user,
+    isLoadingSession,
+    subscriptions,
+    activeCategory,
+    selectedFeedUrl,
+    search,
+    feedData,
+    selectedArticle,
+    articleStates,
+    isLoadingFeed,
+    status,
+    isAuthOpen,
+    isAddOpen,
+    theme,
+    sessionExpired,
+    mounted,
+    setMounted,
+    setTheme,
+    setSessionExpired,
+    setIsAuthOpen,
+    setStatus,
+    refreshSession,
+    loadSubscriptions,
+    loadFeed,
+    loadArticleStates,
+    setActiveCategory,
+    setSearch,
+    setSelectedFeedUrl,
+    setIsAddOpen,
+    addFeed,
+    importOpml,
+    removeSubscription,
+    logout,
+    selectArticle,
+    saveArticleState,
+    isAddingFeed,
+    feedUrlInput,
+    categoryInput,
+    setFeedUrlInput,
+    setCategoryInput,
+  } = useStore();
 
   const isGuest = !user;
 
-  const refreshSession = async () => {
-    setIsLoadingSession(true);
-    try {
-      const response = await fetch("/api/auth/me");
-      const data = await response.json();
-      setUser(data.user || null);
-    } catch {
-      setUser(null);
-    } finally {
-      setIsLoadingSession(false);
-    }
-  };
+  // Effects
+  useEffect(() => {
+    setTimeout(() => {
+      setMounted(true);
+      refreshSession();
 
-useEffect(() => {
-  // Defer execution out of the immediate effect phase to satisfy strict linting rules
-  setTimeout(() => {
-    setMounted(true);
-    refreshSession();
-
-    const storedTheme = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
-    const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    setTheme(storedTheme || preferredTheme);
-  }, 0);
-}, []);
+      const storedTheme = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      setTheme(storedTheme || preferredTheme);
+    }, 0);
+  }, [refreshSession, setMounted, setTheme]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -172,101 +174,18 @@ useEffect(() => {
 
   useEffect(() => {
     if (isLoadingSession) return;
+    loadSubscriptions(sampleSubscriptions);
+  }, [isLoadingSession, loadSubscriptions, sampleSubscriptions]);
 
-    async function loadSubscriptions() {
-      if (!user) {
-        const stored = localStorage.getItem(GUEST_SUBSCRIPTIONS_KEY);
-        const guestSubscriptions = stored ? (JSON.parse(stored) as Subscription[]) : sampleSubscriptions;
-        setSubscriptions(guestSubscriptions);
-        setSelectedFeedUrl(guestSubscriptions[0]?.feedUrl || "");
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/subscriptions");
-        if (!response.ok) return;
-        const data = await response.json();
-        const savedSubscriptions = (data.subscriptions || []) as Subscription[];
-        setSubscriptions(savedSubscriptions);
-        setSelectedFeedUrl(savedSubscriptions[0]?.feedUrl || "");
-      } catch (err) {
-        console.error("Failed to load subscriptions", err);
-      }
-    }
-
-    loadSubscriptions();
-  }, [isLoadingSession, sampleSubscriptions, user]);
-
-useEffect(() => {
-  if (!selectedFeedUrl) return;
-
-  let isCurrent = true;
-  async function loadFeed() {
-    setIsLoadingFeed(true);
-    setStatus(null);
-
-    try {
-      const response = await fetch(`/api/feeds/fetch?url=${encodeURIComponent(selectedFeedUrl)}`);
-      const data = await response.json();
-
-      if (!isCurrent) return;
-
-      if (!response.ok) {
-        setStatus(data.error || "Could not load this feed.");
-        setFeedData(null);
-        setSelectedArticle(null);
-        return;
-      }
-
-      setFeedData(data);
-      setSelectedArticle(data.items?.[0] || null);
-    } catch {
-      if (isCurrent) setStatus("Could not reach the feed parser.");
-    } finally {
-      if (isCurrent) setIsLoadingFeed(false);
-    }
-  }
-
-  loadFeed();
-  
-  // Cleanup flag avoids setting state on unmounted components or stale races
-  return () => {
-    isCurrent = false;
-  };
-}, [selectedFeedUrl]);
   useEffect(() => {
-    if (!selectedFeedUrl || isLoadingSession) return;
+    loadFeed(selectedFeedUrl);
+  }, [selectedFeedUrl, loadFeed]);
 
-    async function loadArticleStates() {
-      if (!user) {
-        const stored = localStorage.getItem(GUEST_ARTICLE_STATES_KEY);
-        setArticleStates(stored ? JSON.parse(stored) : {});
-        return;
-      }
+  useEffect(() => {
+    loadArticleStates(selectedFeedUrl);
+  }, [selectedFeedUrl, loadArticleStates]);
 
-      try {
-        const response = await fetch(`/api/articles/state?feedUrl=${encodeURIComponent(selectedFeedUrl)}`);
-        if (!response.ok) return;
-        const data = await response.json();
-        const states = (data.states || []).reduce(
-          (acc: Record<string, ArticleState>, state: { feedUrl: string; articleId: string; read: boolean; bookmarked: boolean }) => {
-            acc[`${state.feedUrl}::${state.articleId}`] = {
-              read: state.read,
-              bookmarked: state.bookmarked,
-            };
-            return acc;
-          },
-          {}
-        );
-        setArticleStates((current) => ({ ...current, ...states }));
-      } catch (err) {
-        console.error("Failed to load article states", err);
-      }
-    }
-
-    loadArticleStates();
-  }, [isLoadingSession, selectedFeedUrl, user]);
-
+  // Derived State Memos
   const categories = useMemo(
     () => ["All Feeds", ...Array.from(new Set(subscriptions.map((sub) => sub.category || "General")))],
     [subscriptions]
@@ -293,200 +212,31 @@ useEffect(() => {
     return sanitizeArticleHtml(selectedArticle.content || selectedArticle.summary || "");
   }, [selectedArticle, mounted]);
 
-  const persistGuestSubscriptions = (nextSubscriptions: Subscription[]) => {
-    setSubscriptions(nextSubscriptions);
-    localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
-  };
-
-  const saveArticleState = async (article: NormalizedItem, patch: ArticleState) => {
-    const key = articleKey(selectedFeedUrl, article);
-    const nextState = { ...(articleStates[key] || {}), ...patch };
-    const nextStates = { ...articleStates, [key]: nextState };
-
-    setArticleStates(nextStates);
-
-    if (!user) {
-      localStorage.setItem(GUEST_ARTICLE_STATES_KEY, JSON.stringify(nextStates));
-      return;
-    }
-
-    try {
-      await fetch("/api/articles/state", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feedUrl: selectedFeedUrl,
-          articleId: getArticleId(article),
-          ...patch,
-        }),
-      });
-    } catch (err) {
-      console.error("Failed to save article state to database", err);
-    }
-  };
-
-  const selectArticle = (article: NormalizedItem) => {
-    setSelectedArticle(article);
-    saveArticleState(article, { read: true });
-  };
-
-  const addFeed = async (event: FormEvent<HTMLFormElement>) => {
+  // Actions event handlers
+  const handleAddFeedSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus(null);
-
-    const trimmedFeedUrl = feedUrlInput.trim();
-    const trimmedCategory = categoryInput.trim() || "General";
-
-    if (!FEED_URL_REGEX.test(trimmedFeedUrl)) {
-      setStatus("Enter a valid RSS or Atom URL starting with http:// or https://.");
-      return;
-    }
-
-    if (!CATEGORY_REGEX.test(trimmedCategory)) {
-      setStatus("Category must be 2-40 characters using letters, numbers, spaces, &, /, _ or -.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/feeds/preview?url=${encodeURIComponent(trimmedFeedUrl)}`);
-      const preview = await response.json();
-
-      if (!response.ok) {
-        setStatus(preview.error || "That feed could not be previewed.");
-        return;
-      }
-
-      const nextSubscription: Subscription = {
-        title: preview.title,
-        feedUrl: trimmedFeedUrl,
-        siteUrl: preview.link,
-        description: preview.description || "",
-        format: "rss",
-        category: trimmedCategory,
-      };
-
-      if (user) {
-        const saveResponse = await fetch("/api/subscriptions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ feedUrl: trimmedFeedUrl, category: nextSubscription.category }),
-        });
-        const saved = await saveResponse.json();
-
-        if (!saveResponse.ok) {
-          setStatus(saved.message || "Could not save this subscription.");
-          return;
-        }
-
-        nextSubscription._id = saved.subscription?._id;
-      }
-
-      const nextSubscriptions = [...subscriptions, nextSubscription];
-      if (user) {
-        setSubscriptions(nextSubscriptions);
-      } else {
-        persistGuestSubscriptions(nextSubscriptions);
-      }
-
-      setSelectedFeedUrl(trimmedFeedUrl);
-      setFeedUrlInput("");
-      setCategoryInput("General");
-      setIsAddOpen(false);
-    } catch {
-      setStatus("Error adding new subscription source.");
-    }
+    await addFeed();
   };
 
-  const importOpml = async (file: File | null) => {
-    if (!file) return;
-    setStatus(null);
-
-    try {
-      if (!user) {
-        const text = await file.text();
-        const matches = Array.from(text.matchAll(/xmlUrl=["']([^"']+)["']/gi));
-        const imported = matches
-          .map((match) => {
-            try {
-              return {
-                title: match[1],
-                feedUrl: match[1],
-                siteUrl: new URL(match[1]).origin,
-                description: "Imported from OPML",
-                format: "rss",
-                category: "Imported",
-              };
-            } catch {
-              return null;
-            }
-          })
-          .filter((feed): feed is Subscription => Boolean(feed));
-        const nextSubscriptions = [...subscriptions, ...imported];
-        persistGuestSubscriptions(nextSubscriptions);
-        setStatus(`Imported ${imported.length} feeds for this guest session.`);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/opml/import", { method: "POST", body: formData });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setStatus(data.message || "Could not import this OPML file.");
-        return;
-      }
-
-      setSubscriptions((current) => [...current, ...data.imported]);
-      setStatus(`Imported ${data.imported.length} feeds. Skipped ${data.skipped.length}.`);
-    } catch {
-      setStatus("Parsing error occurred during OPML import.");
-    }
+  const handleImportOpml = async (file: File | null) => {
+    await importOpml(file);
   };
 
-const removeSubscription = async (subscription: Subscription) => {
-  const nextSubscriptions = subscriptions.filter((item) => item.feedUrl !== subscription.feedUrl);
+  const handleRemoveSubscription = async (subscription: Subscription) => {
+    await removeSubscription(subscription);
+  };
 
-  if (user && subscription._id) {
-    try {
-      await fetch(`/api/subscriptions/${subscription._id}`, { method: "DELETE" });
-      setSubscriptions(nextSubscriptions);
-    } catch {
-      setStatus("Could not remove the subscription from your account.");
-      return;
-    }
-  } else {
-    persistGuestSubscriptions(nextSubscriptions);
-  }
+  const handleLogout = async () => {
+    await logout(sampleSubscriptions);
+  };
 
-  if (selectedFeedUrl === subscription.feedUrl) {
-    const nextUrl = nextSubscriptions[0]?.feedUrl || "";
-    setSelectedFeedUrl(nextUrl);
-    
-    // If there are no more feeds left, clear the viewer immediately
-    if (!nextUrl) {
-      setFeedData(null);
-      setSelectedArticle(null);
-    }
-  }
-};
+  const handleSelectArticle = (article: NormalizedItem) => {
+    selectArticle(selectedFeedUrl, article);
+  };
 
-const logout = async () => {
-  try {
-    await fetch("/api/auth/logout", { method: "POST" });
-  } finally {
-    setUser(null);
-    setSubscriptions(sampleSubscriptions);
-    
-    const nextUrl = sampleSubscriptions[0]?.feedUrl || "";
-    setSelectedFeedUrl(nextUrl);
-    
-    if (!nextUrl) {
-      setFeedData(null);
-      setSelectedArticle(null);
-    }
-  }
-};
+  const handleToggleBookmark = async (article: NormalizedItem, currentBookmarked: boolean) => {
+    await saveArticleState(selectedFeedUrl, article, { bookmarked: !currentBookmarked });
+  };
 
   // Prevent flash or parsing errors during absolute early server pass
   if (!mounted) {
@@ -495,17 +245,40 @@ const logout = async () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      {/* Screen-reader-only page h1 for correct heading hierarchy */}
+      <h1 className="sr-only">Frontpage Dashboard</h1>
+
+      {/* Session expiry notification */}
+      {sessionExpired && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm text-amber-200 shadow-lg backdrop-blur-sm"
+        >
+          <span>Your session has expired. Please</span>
+          <button
+            type="button"
+            onClick={() => { setSessionExpired(false); setIsAuthOpen(true); }}
+            className="font-semibold underline hover:no-underline"
+          >
+            log in again
+          </button>
+          <button type="button" onClick={() => setSessionExpired(false)} aria-label="Dismiss" className="ml-2 opacity-60 hover:opacity-100">
+            ✕
+          </button>
+        </div>
+      )}
       <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90">
         <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-5">
             <Link href="/" className="flex items-center gap-2 font-bold">
               <Logo />
             </Link>
-            <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-500 md:flex">
-              <button className="text-zinc-950 dark:text-white">Feed</button>
-              <button>Digest</button>
-              <button>Discover</button>
-            </nav>
+          <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-500 md:flex">
+              <button type="button" className="text-zinc-950 dark:text-white">Feed</button>
+              <button type="button" onClick={() => setStatus("Digest — coming soon!")} className="hover:text-zinc-950 dark:hover:text-white transition-colors">Digest</button>
+              <button type="button" onClick={() => setStatus("Discover — coming soon!")} className="hover:text-zinc-950 dark:hover:text-white transition-colors">Discover</button>
+          </nav>
           </div>
 
           <div className="flex items-center gap-2">
@@ -529,7 +302,7 @@ const logout = async () => {
             </button>
             <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800">
               <FileUp className="h-4 w-4" />
-              <input type="file" accept=".opml,.xml,text/xml" className="sr-only" onChange={(event) => importOpml(event.target.files?.[0] || null)} />
+              <input type="file" accept=".opml,.xml,text/xml" className="sr-only" onChange={(event) => handleImportOpml(event.target.files?.[0] || null)} />
             </label>
             <button
               type="button"
@@ -543,7 +316,7 @@ const logout = async () => {
               <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900">
                 <User className="h-4 w-4 text-zinc-500" />
                 <span className="hidden max-w-28 truncate sm:inline">{user.firstName || user.username || user.email}</span>
-                <button type="button" onClick={logout} aria-label="Log out">
+                <button type="button" onClick={handleLogout} aria-label="Log out">
                   <LogOut className="h-4 w-4 text-zinc-500 hover:text-red-500" />
                 </button>
               </div>
@@ -585,13 +358,21 @@ const logout = async () => {
               </button>
             ))}
           </nav>
-          {status && <p className="mt-4 rounded-md bg-zinc-100 p-3 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">{status}</p>}
+          {status && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="mt-4 rounded-md bg-zinc-100 p-3 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              {status}
+            </p>
+          )}
         </aside>
 
         <section className="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="border-b border-zinc-200 p-4 dark:border-zinc-800">
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Sources</p>
-            <h1 className="mt-1 text-2xl font-bold">Latest Posts</h1>
+            <h2 className="mt-1 text-2xl font-bold">Latest Posts</h2>
           </div>
           <div className="max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
             {visibleSubscriptions.map((subscription) => (
@@ -616,7 +397,7 @@ const logout = async () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => removeSubscription(subscription)}
+                  onClick={() => handleRemoveSubscription(subscription)}
                   className="mt-2 hidden h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-500 group-hover:flex dark:hover:bg-red-950/30"
                   aria-label="Remove subscription"
                 >
@@ -642,7 +423,7 @@ const logout = async () => {
                     <button
                       key={article.guid || article.link || article.title}
                       type="button"
-                      onClick={() => selectArticle(article)}
+                      onClick={() => handleSelectArticle(article)}
                       className={`block w-full border-b border-zinc-200 p-4 text-left hover:bg-white dark:border-zinc-800 dark:hover:bg-zinc-900 ${
                         selectedArticle === article ? "bg-white dark:bg-zinc-900" : ""
                       }`}
@@ -676,7 +457,7 @@ const logout = async () => {
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => saveArticleState(selectedArticle, { bookmarked: !selectedArticleState.bookmarked })}
+                      onClick={() => handleToggleBookmark(selectedArticle, !!selectedArticleState.bookmarked)}
                       className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
                       aria-label="Toggle bookmark"
                     >
@@ -701,7 +482,13 @@ const logout = async () => {
                 )}
                 <div
                   className="feed-reader-content text-zinc-800 dark:text-zinc-100"
-                  dangerouslySetInnerHTML={{ __html: safeContent || `<p>${stripHtml(selectedArticle.summary)}</p>` }}
+                  dangerouslySetInnerHTML={{
+                    __html: safeContent
+                      ? safeContent
+                      : selectedArticle.summary
+                      ? `<p>${escapeHtml(selectedArticle.summary)}</p>`
+                      : `<p class="text-zinc-400 italic">No content available for this article.</p>`,
+                  }}
                 />
               </div>
             ) : (
@@ -718,7 +505,7 @@ const logout = async () => {
 
       {isAddOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={addFeed} className="w-full max-w-md rounded-md bg-white p-5 shadow-xl dark:bg-zinc-900">
+          <form onSubmit={handleAddFeedSubmit} className="w-full max-w-md rounded-md bg-white p-5 shadow-xl dark:bg-zinc-900">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold">Add Feed</h2>
               <button type="button" onClick={() => setIsAddOpen(false)} aria-label="Close">
@@ -752,12 +539,70 @@ const logout = async () => {
               pattern="[A-Za-z0-9][A-Za-z0-9 &/_-]{1,39}"
               title="Use 2-40 characters: letters, numbers, spaces, &, /, _ or -."
             />
-            <button type="submit" className="h-10 w-full rounded-md bg-zinc-900 font-semibold text-white dark:bg-white dark:text-zinc-950">
-              Subscribe
+            <button
+              type="submit"
+              disabled={isAddingFeed}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-zinc-950"
+            >
+              {isAddingFeed ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Adding...
+                </>
+              ) : (
+                "Subscribe"
+              )}
             </button>
           </form>
         </div>
       )}
+
+      {/* Mobile bottom navigation bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-zinc-200 bg-white/95 pb-safe px-2 py-3 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden">
+        <button
+          type="button"
+          onClick={() => setIsAddOpen(true)}
+          className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white"
+        >
+          <Plus className="h-5 w-5" />
+          <span>Add</span>
+        </button>
+        <label className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white cursor-pointer">
+          <FileUp className="h-5 w-5" />
+          <span>Import</span>
+          <input type="file" accept=".opml,.xml,text/xml" className="sr-only" onChange={(event) => handleImportOpml(event.target.files?.[0] || null)} />
+        </label>
+        <button
+          type="button"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white"
+        >
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          <span>Theme</span>
+        </button>
+        {user ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-red-500"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Logout</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsAuthOpen(true)}
+            className="flex flex-col items-center gap-1 text-xs text-zinc-900 dark:text-white"
+          >
+            <LogIn className="h-5 w-5" />
+            <span>Log in</span>
+          </button>
+        )}
+      </nav>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onSuccess={refreshSession} />
     </div>
