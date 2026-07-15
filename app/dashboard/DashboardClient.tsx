@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bookmark,
   Check,
@@ -11,6 +11,8 @@ import {
   LogIn,
   LogOut,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Rss,
   SearchIcon,
@@ -108,6 +110,22 @@ function sanitizeArticleHtml(html: string | null) {
 export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFeeds }) {
   const sampleSubscriptions = useMemo(() => flattenSampleFeeds(sampleFeeds), [sampleFeeds]);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("frontpage:sidebar-collapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("frontpage:sidebar-collapsed", String(next));
+      return next;
+    });
+  };
+
+
   // Bind Zustand Store state & actions
   const {
     user,
@@ -172,24 +190,29 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     localStorage.setItem(THEME_KEY, theme);
   }, [theme, mounted]);
 
+
   useEffect(() => {
     if (isLoadingSession) return;
     loadSubscriptions(sampleSubscriptions);
   }, [isLoadingSession, loadSubscriptions, sampleSubscriptions]);
 
+
   useEffect(() => {
     loadFeed(selectedFeedUrl);
   }, [selectedFeedUrl, loadFeed]);
 
+
   useEffect(() => {
     loadArticleStates(selectedFeedUrl);
   }, [selectedFeedUrl, loadArticleStates]);
+
 
   // Derived State Memos
   const categories = useMemo(
     () => ["All Feeds", ...Array.from(new Set(subscriptions.map((sub) => sub.category || "General")))],
     [subscriptions]
   );
+
 
   const visibleSubscriptions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -203,9 +226,11 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     });
   }, [activeCategory, search, subscriptions]);
 
+
   const selectedSubscription = subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl);
   const selectedArticleState = selectedArticle ? articleStates[articleKey(selectedFeedUrl, selectedArticle)] || {} : {};
   
+
   // Handled client-side to strictly avoid Next.js HTML hydration mismatches
   const safeContent = useMemo(() => {
     if (!mounted || !selectedArticle) return "";
@@ -271,9 +296,10 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
       <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90">
         <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-5">
-            <Link href="/" className="flex items-center gap-2 font-bold">
+            <Link href="/" className="flex items-center gap-2 font-bold shrink-0">
               <Logo />
             </Link>
+           
           <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-500 md:flex">
               <button type="button" className="text-zinc-950 dark:text-white">Feed</button>
               <button type="button" onClick={() => setStatus("Digest — coming soon!")} className="hover:text-zinc-950 dark:hover:text-white transition-colors">Digest</button>
@@ -334,39 +360,58 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
         </div>
       </header>
 
-      <div className="grid flex-1 md:grid-cols-[16rem_minmax(20rem,24rem)_1fr]">
-        <aside className="hidden border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 md:block">
-          <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            {isGuest ? "Guest Feeds" : "My Feeds"}
-          </div>
-          <nav className="space-y-1">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setActiveCategory(category)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
-                  activeCategory === category
-                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-                }`}
+      <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_minmax(20rem,24rem)_1fr]">
+        <aside 
+          className={`hidden border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 md:block transition-all duration-300 ease-in-out relative ${
+            isSidebarCollapsed ? "w-0 border-r-0" : "w-64 p-4 border-r"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className={`hidden md:flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-all z-40 ${
+              isSidebarCollapsed 
+                ? "fixed left-4 top-20 shadow-md border-zinc-300 dark:border-zinc-700" 
+                : "mb-4"
+            }`}
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+          <div className={`transition-all duration-200 ${isSidebarCollapsed ? "opacity-0 pointer-events-none hidden" : "opacity-100"}`}>
+            <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              {isGuest ? "Guest Feeds" : "My Feeds"}
+            </div>
+            <nav className="space-y-1">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(category)}
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
+                    activeCategory === category
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950"
+                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                  }`}
+                >
+                  <span>{category}</span>
+                  <span className="text-xs opacity-60">
+                    {category === "All Feeds" ? subscriptions.length : subscriptions.filter((item) => item.category === category).length}
+                  </span>
+                </button>
+              ))}
+            </nav>
+            {status && (
+              <p
+                role="status"
+                aria-live="polite"
+                className="mt-4 rounded-md bg-zinc-100 p-3 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
               >
-                <span>{category}</span>
-                <span className="text-xs opacity-60">
-                  {category === "All Feeds" ? subscriptions.length : subscriptions.filter((item) => item.category === category).length}
-                </span>
-              </button>
-            ))}
-          </nav>
-          {status && (
-            <p
-              role="status"
-              aria-live="polite"
-              className="mt-4 rounded-md bg-zinc-100 p-3 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
-            >
-              {status}
-            </p>
-          )}
+                {status}
+              </p>
+            )}
+          </div>
         </aside>
 
         <section className="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">

@@ -83,7 +83,7 @@ export default function Home() {
 
       {/* Cinematic Ambient Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-linear-to-b from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute -top-[40%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute top-[-40%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px] pointer-events-none" />
 
       <Header />
 
