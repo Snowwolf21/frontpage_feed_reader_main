@@ -164,12 +164,20 @@ export const useStore = create<StoreState>((set, get) => ({
     const { user } = get();
     if (!user) {
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(GUEST_SUBSCRIPTIONS_KEY);
-        const guestSubscriptions = stored ? (JSON.parse(stored) as Subscription[]) : sampleSubscriptions;
-        set({
-          subscriptions: guestSubscriptions,
-          selectedFeedUrl: get().selectedFeedUrl || guestSubscriptions[0]?.feedUrl || "",
-        });
+        try {
+          const stored = localStorage.getItem(GUEST_SUBSCRIPTIONS_KEY);
+          const guestSubscriptions = stored ? (JSON.parse(stored) as Subscription[]) : sampleSubscriptions;
+          set({
+            subscriptions: guestSubscriptions,
+            selectedFeedUrl: get().selectedFeedUrl || guestSubscriptions[0]?.feedUrl || "",
+          });
+        } catch (e) {
+          console.error("Failed to load subscriptions from localStorage", e);
+          set({
+            subscriptions: sampleSubscriptions,
+            selectedFeedUrl: get().selectedFeedUrl || sampleSubscriptions[0]?.feedUrl || "",
+          });
+        }
       }
       return;
     }
@@ -229,8 +237,13 @@ export const useStore = create<StoreState>((set, get) => ({
 
     if (!user) {
       if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(GUEST_ARTICLE_STATES_KEY);
-        set({ articleStates: stored ? JSON.parse(stored) : {} });
+        try {
+          const stored = localStorage.getItem(GUEST_ARTICLE_STATES_KEY);
+          set({ articleStates: stored ? JSON.parse(stored) : {} });
+        } catch (e) {
+          console.error("Failed to load article states from localStorage", e);
+          set({ articleStates: {} });
+        }
       }
       return;
     }
@@ -267,7 +280,11 @@ export const useStore = create<StoreState>((set, get) => ({
 
     if (!user) {
       if (typeof window !== "undefined") {
-        localStorage.setItem(GUEST_ARTICLE_STATES_KEY, JSON.stringify(nextStates));
+        try {
+          localStorage.setItem(GUEST_ARTICLE_STATES_KEY, JSON.stringify(nextStates));
+        } catch (e) {
+          console.error("Failed to save article states to localStorage", e);
+        }
       }
       return;
     }
@@ -350,7 +367,11 @@ export const useStore = create<StoreState>((set, get) => ({
       } else {
         set({ subscriptions: nextSubscriptions });
         if (typeof window !== "undefined") {
-          localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+          try {
+            localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+          } catch (e) {
+            console.error("Failed to save subscriptions to localStorage", e);
+          }
         }
       }
 
@@ -399,7 +420,11 @@ export const useStore = create<StoreState>((set, get) => ({
         const nextSubscriptions = [...subscriptions, ...imported];
         set({ subscriptions: nextSubscriptions });
         if (typeof window !== "undefined") {
-          localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+          try {
+            localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+          } catch (e) {
+            console.error("Failed to save subscriptions to localStorage", e);
+          }
         }
         set({ status: `Imported ${imported.length} feeds for this guest session.` });
         return;
@@ -439,7 +464,11 @@ export const useStore = create<StoreState>((set, get) => ({
     } else {
       set({ subscriptions: nextSubscriptions });
       if (typeof window !== "undefined") {
-        localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+        try {
+          localStorage.setItem(GUEST_SUBSCRIPTIONS_KEY, JSON.stringify(nextSubscriptions));
+        } catch (e) {
+          console.error("Failed to save subscriptions to localStorage", e);
+        }
       }
     }
 
