@@ -20,7 +20,7 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://snowwolfrssfeed.verc
 
 // 🎨 Viewport & Theme Optimization (Separated in Next.js 14+)
 export const viewport: Viewport = {
-  themeColor: "#09090b", // Matches zinc-950 dark theme canvas
+  themeColor: "#09090b", 
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
