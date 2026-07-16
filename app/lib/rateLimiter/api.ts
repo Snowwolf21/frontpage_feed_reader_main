@@ -10,7 +10,7 @@ const redis = Redis.fromEnv();
 export const apiLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, "1 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -20,7 +20,7 @@ export const apiLimiter = new Ratelimit({
 export const strictApiLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -30,5 +30,5 @@ export const strictApiLimiter = new Ratelimit({
 export const publicApiLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(60, "1 m"),
-  analytics: true,
+  analytics: false,
 });

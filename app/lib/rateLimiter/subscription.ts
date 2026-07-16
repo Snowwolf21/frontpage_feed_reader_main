@@ -10,7 +10,7 @@ const redis = Redis.fromEnv();
 export const createSubscriptionLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(5, "15 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -19,7 +19,7 @@ export const createSubscriptionLimiter = new Ratelimit({
 export const cancelSubscriptionLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(5, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -28,7 +28,7 @@ export const cancelSubscriptionLimiter = new Ratelimit({
 export const updateSubscriptionLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -37,7 +37,7 @@ export const updateSubscriptionLimiter = new Ratelimit({
 export const billingPortalLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -46,5 +46,5 @@ export const billingPortalLimiter = new Ratelimit({
 export const paymentVerificationLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "10 m"),
-  analytics: true,
+  analytics: false,
 });

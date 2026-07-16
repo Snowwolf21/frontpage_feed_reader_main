@@ -9,7 +9,7 @@ const redis = Redis.fromEnv();
 export const rssReadLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(120, "1 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -18,7 +18,7 @@ export const rssReadLimiter = new Ratelimit({
 export const rssSubscribeLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -27,5 +27,5 @@ export const rssSubscribeLimiter = new Ratelimit({
 export const rssUnsubscribeLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(60, "1 h"),
-  analytics: true,
+  analytics: false,
 });

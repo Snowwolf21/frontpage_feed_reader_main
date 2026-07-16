@@ -11,7 +11,7 @@ new Ratelimit({
     20,
     "10 m"
   ),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -21,7 +21,7 @@ new Ratelimit({
 export const feedSearchLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "10 m"),
-  analytics: true,
+  analytics: false,
 });
 
 // Multi-feed limit
@@ -32,7 +32,7 @@ export const multiFeedLimiter =
       20,
       "10 m"
     ),
-    analytics: true,
+    analytics: false,
   });
 
 /**
@@ -42,7 +42,7 @@ export const multiFeedLimiter =
 export const feedFetchLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -52,7 +52,7 @@ export const feedFetchLimiter = new Ratelimit({
 export const feedImportLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 

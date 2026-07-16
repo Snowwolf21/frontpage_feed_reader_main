@@ -13,6 +13,42 @@ import Parser from "rss-parser";
 
 const MAX_FEED_BYTES = 5 * 1024 * 1024; // 5 MB hard cap — prevents OOM via huge feeds
 
+async function fetchWithTimeoutAndRetry(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = 4500,
+  retries: number = 2
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      // If it returned a server error or rate limit, throw to retry it
+      if (response.status === 429 || (response.status >= 500 && response.status <= 599)) {
+        throw new Error(`HTTP status ${response.status}`);
+      }
+
+      return response;
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err;
+      if (attempt < retries - 1) {
+        // Wait 500ms before retrying to allow socket release or remote rate limit resolution
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const raw = req.nextUrl.searchParams.get("url");
 
@@ -47,7 +83,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const fetchResponse = await fetch(raw, {
+    const fetchResponse = await fetchWithTimeoutAndRetry(raw, {
       method: "GET",
       headers: {
         "User-Agent":
@@ -57,7 +93,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         "Accept-Language": "en-US,en;q=0.5",
         "Cache-Control": "no-cache",
       },
-      signal: AbortSignal.timeout(7000), // 7-second ceiling
     });
 
     if (!fetchResponse.ok) {
@@ -127,13 +162,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const isTimeout =
-      (err instanceof Error && err.name === "TimeoutError") ||
-      errorMessage.includes("timeout");
+      (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("abort");
 
     if (isTimeout) {
       return NextResponse.json(
         { error: "The remote feed server took too long to respond." },
         { status: 504 }
+      );
+    }
+
+    if (errorMessage.startsWith("HTTP status ")) {
+      const statusStr = errorMessage.replace("HTTP status ", "");
+      const status = parseInt(statusStr, 10);
+      return NextResponse.json(
+        { error: `Remote feed server returned status ${status}` },
+        { status: status === 404 ? 404 : 502 }
       );
     }
 

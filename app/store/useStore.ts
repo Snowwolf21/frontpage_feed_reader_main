@@ -56,6 +56,7 @@ interface StoreState {
   theme: "light" | "dark";
   sessionExpired: boolean;
   mounted: boolean;
+  isSidebarCollapsed: boolean;
 
   // Simple Setters
   setUser: (user: UserProfile | null) => void;
@@ -77,8 +78,10 @@ interface StoreState {
   setTheme: (theme: "light" | "dark") => void;
   setSessionExpired: (expired: boolean) => void;
   setMounted: (mounted: boolean) => void;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
 
   // Actions
+  toggleSidebar: () => void;
   refreshSession: () => Promise<void>;
   loadSubscriptions: (sampleSubscriptions: Subscription[]) => Promise<void>;
   loadFeed: (feedUrl: string) => Promise<void>;
@@ -112,6 +115,7 @@ export const useStore = create<StoreState>((set, get) => ({
   theme: "light",
   sessionExpired: false,
   mounted: false,
+  isSidebarCollapsed: false,
 
   // Setters
   setUser: (user) => set({ user }),
@@ -139,8 +143,20 @@ export const useStore = create<StoreState>((set, get) => ({
   setTheme: (theme) => set({ theme }),
   setSessionExpired: (sessionExpired) => set({ sessionExpired }),
   setMounted: (mounted) => set({ mounted }),
+  setIsSidebarCollapsed: (isSidebarCollapsed) => set({ isSidebarCollapsed }),
 
   // Actions
+  toggleSidebar: () => {
+    const next = !get().isSidebarCollapsed;
+    set({ isSidebarCollapsed: next });
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("frontpage:sidebar-collapsed", String(next));
+      } catch (e) {
+        console.warn("localStorage is not accessible:", e);
+      }
+    }
+  },
   refreshSession: async () => {
     set({ isLoadingSession: true });
     try {

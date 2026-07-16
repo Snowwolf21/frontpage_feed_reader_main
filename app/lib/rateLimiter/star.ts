@@ -13,5 +13,5 @@ const redis = Redis.fromEnv();
 export const starLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, "1 m"),
-  analytics: true,
+  analytics: false,
 });

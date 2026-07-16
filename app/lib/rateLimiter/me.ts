@@ -10,5 +10,5 @@ const redis = Redis.fromEnv();
 export const meLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(120, "1 m"),
-  analytics: true,
+  analytics: false,
 });

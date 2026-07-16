@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
@@ -110,17 +109,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers();
-  const nonce = headersList.get("x-nonce") || "";
-
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
-      nonce={nonce}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-50 selection:bg-white/10 selection:text-white" nonce={nonce}>
+      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-50 selection:bg-white/10 selection:text-white">
         {children}
       </body>
     </html>

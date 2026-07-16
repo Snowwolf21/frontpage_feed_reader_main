@@ -10,7 +10,7 @@ const redis = Redis.fromEnv();
 export const opmlImportLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(5, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -20,7 +20,7 @@ export const opmlImportLimiter = new Ratelimit({
 export const opmlExportLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -29,5 +29,5 @@ export const opmlExportLimiter = new Ratelimit({
 export const opmlPreviewLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 h"),
-  analytics: true,
+  analytics: false,
 });

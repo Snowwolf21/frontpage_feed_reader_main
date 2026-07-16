@@ -149,5 +149,6 @@ export function classifyError(err: unknown): { status: number; message: string }
     return { status: 422, message: 'The URL did not return a valid RSS or Atom feed.' };
   }
 
-  return { status: 500, message: `Could not fetch feed: ${message}` };
+  // Network or other external gateway connection errors should return 502 Bad Gateway
+  return { status: 502, message: `Could not fetch feed: ${message}` };
 }

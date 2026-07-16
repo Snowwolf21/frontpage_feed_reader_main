@@ -65,21 +65,11 @@ const PRICING_TIERS = [
 export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
-  const { mainRef, skipToMain } = useSkipToMain();
+  const { mainRef } = useSkipToMain();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-50 font-sans selection:bg-white/20">
-      {/* Premium Keyboard Accessibility */}
-      <Link
-        href="#main"
-        onClick={(e) => {
-          e.preventDefault();
-          skipToMain();
-        }}
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:text-zinc-950 focus:px-5 focus:py-2.5 focus:rounded-xl focus:font-bold focus:ring-4 focus:ring-white/20 transition-all"
-      >
-        Skip to main content
-      </Link>
+    
 
       {/* Cinematic Ambient Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-linear-to-b from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-[120px] pointer-events-none" />

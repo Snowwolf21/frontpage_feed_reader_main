@@ -10,7 +10,7 @@ const redis = Redis.fromEnv();
 export const articleReadLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(300, "1 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -19,7 +19,7 @@ export const articleReadLimiter = new Ratelimit({
 export const articleSearchLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, "1 m"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -28,7 +28,7 @@ export const articleSearchLimiter = new Ratelimit({
 export const articleCreateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -37,7 +37,7 @@ export const articleCreateLimiter = new Ratelimit({
 export const articleUpdateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(50, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -46,7 +46,7 @@ export const articleUpdateLimiter = new Ratelimit({
 export const articleDeleteLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -55,7 +55,7 @@ export const articleDeleteLimiter = new Ratelimit({
 export const articleBookmarkLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(200, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -64,7 +64,7 @@ export const articleBookmarkLimiter = new Ratelimit({
 export const articleReactionLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(100, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -74,7 +74,7 @@ export const articleReactionLimiter = new Ratelimit({
 export const articleSummaryLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 h"),
-  analytics: true,
+  analytics: false,
 });
 
 /**
@@ -83,5 +83,5 @@ export const articleSummaryLimiter = new Ratelimit({
 export const articleAILimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, "1 h"),
-  analytics: true,
+  analytics: false,
 });
