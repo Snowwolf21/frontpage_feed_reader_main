@@ -105,7 +105,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
         )}
 
         <div className="flex items-center gap-3 md:gap-5">
-          <Link href="/" className="flex items-center gap-2 font-bold shrink-0">
+          <Link href="/dashboard" className="flex items-center gap-2 font-bold shrink-0">
             <Logo />
           </Link>
          
