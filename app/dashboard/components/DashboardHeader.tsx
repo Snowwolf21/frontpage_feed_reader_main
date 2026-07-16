@@ -186,6 +186,17 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
             type="button"
             variant="outline"
             size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex h-9 w-9 shrink-0 cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
             onClick={() => setIsAddOpen(true)}
             className="hidden md:flex"
             aria-label="Add feed"
@@ -201,16 +212,6 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               onChange={(event) => handleImportOpml(event.target.files?.[0] || null)} 
             />
           </label>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="hidden md:flex"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
           {user ? (
             <div className="hidden md:flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
               <User className="h-4 w-4 text-zinc-500" />

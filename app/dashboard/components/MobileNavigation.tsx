@@ -1,18 +1,21 @@
 "use client";
 
-import { Moon, Plus, Sun, Compass, Newspaper, Rss } from "lucide-react";
+import { Plus, Compass, Newspaper, Rss, FileUp } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
 import { Button } from "@/components/ui/button";
 
 export default function MobileNavigation() {
   const {
-    theme,
-    setTheme,
     setIsAddOpen,
     activeTab,
     setActiveTab,
     setViewMode,
+    importOpml,
   } = useStore();
+
+  const handleImportOpml = async (file: File | null) => {
+    await importOpml(file);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-zinc-200 bg-white/95 pb-safe px-2 py-2.5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden">
@@ -71,15 +74,16 @@ export default function MobileNavigation() {
         <span>Add</span>
       </Button>
 
-      <Button
-        variant="ghost"
-        type="button"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="flex flex-col items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white h-auto p-0 font-normal hover:bg-transparent"
-      >
-        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        <span>Theme</span>
-      </Button>
+      <label className="flex flex-col items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer select-none">
+        <FileUp className="h-5 w-5" />
+        <span>Import</span>
+        <input 
+          type="file" 
+          accept=".opml,.xml,text/xml" 
+          className="sr-only" 
+          onChange={(event) => handleImportOpml(event.target.files?.[0] || null)} 
+        />
+      </label>
     </nav>
   );
 }
