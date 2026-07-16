@@ -57,6 +57,7 @@ interface StoreState {
   sessionExpired: boolean;
   mounted: boolean;
   isSidebarCollapsed: boolean;
+  viewMode: "sources" | "articles" | "reader";
 
   // Simple Setters
   setUser: (user: UserProfile | null) => void;
@@ -79,6 +80,7 @@ interface StoreState {
   setSessionExpired: (expired: boolean) => void;
   setMounted: (mounted: boolean) => void;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
+  setViewMode: (mode: "sources" | "articles" | "reader") => void;
 
   // Actions
   toggleSidebar: () => void;
@@ -116,13 +118,15 @@ export const useStore = create<StoreState>((set, get) => ({
   sessionExpired: false,
   mounted: false,
   isSidebarCollapsed: false,
+  viewMode: "sources",
 
   // Setters
   setUser: (user) => set({ user }),
   setIsLoadingSession: (isLoadingSession) => set({ isLoadingSession }),
   setSubscriptions: (subscriptions) => set({ subscriptions }),
   setActiveCategory: (activeCategory) => set({ activeCategory }),
-  setSelectedFeedUrl: (selectedFeedUrl) => set({ selectedFeedUrl }),
+  setSelectedFeedUrl: (selectedFeedUrl) => set({ selectedFeedUrl, viewMode: "articles" }),
+  setViewMode: (viewMode) => set({ viewMode }),
   setSearch: (search) => set({ search }),
   setFeedData: (feedData) => set({ feedData }),
   setSelectedArticle: (selectedArticle) => set({ selectedArticle }),
@@ -321,7 +325,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   selectArticle: (feedUrl, article) => {
-    set({ selectedArticle: article });
+    set({ selectedArticle: article, viewMode: "reader" });
     get().saveArticleState(feedUrl, article, { read: true });
   },
 

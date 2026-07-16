@@ -1,8 +1,35 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
+export function middleware(request: NextRequest) {
+  // 1. Generate a secure, cryptographically random unique Nonce token per request
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  
+  // 2. Set up a strict Content Security Policy utilizing the dynamic nonce string
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https:;
+    font-src 'self';
+    connect-src 'self';
+    frame-ancestors 'none';
+  `.replace(/\s{2,}/g, ' ').trim();
 
-export function middleware() {
-  const response = NextResponse.next();
+  // 3. Clone request headers to inject the nonce tracking reference for the Layout engine
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+
+  // 4. Instantiate the response object passing downstream forward paths
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // 5. Explicitly mirror the identical CSP structure to the active response headers
+  response.headers.set('Content-Security-Policy', cspHeader);
 
   // Prevent MIME sniffing
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -21,13 +48,7 @@ export function middleware() {
   // Control referrer information
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // Content Security Policy
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
-  );
-
-  // Permissions Policy (formerly Feature Policy)
+  // Permissions Policy
   response.headers.set(
     'Permissions-Policy',
     'geolocation=(), microphone=(), camera=(), payment=()'
@@ -36,6 +57,15 @@ export function middleware() {
   return response;
 }
 
+// Optimized matcher to prevent running security computation loops across standard asset endpoints
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
 };

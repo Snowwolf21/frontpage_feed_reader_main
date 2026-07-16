@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''};
-    style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ''};
+    style-src 'self' 'unsafe-inline';
     img-src 'self' data: https:;
     font-src 'self' data:;
     connect-src 'self'${isDev ? ' ws://127.0.0.1:* ws://localhost:* http://localhost:* http://127.0.0.1:*' : ''};

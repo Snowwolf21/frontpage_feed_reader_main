@@ -45,6 +45,7 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     loadArticleStates,
     selectedFeedUrl,
     setIsSidebarCollapsed,
+    viewMode,
   } = useStore();
 
   // Effects
@@ -139,15 +140,26 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
 
       <DashboardHeader sampleSubscriptions={sampleSubscriptions} />
 
-      <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_minmax(20rem,24rem)_1fr]">
+      {/* Responsive Multi-Pane Grid Layout */}
+      <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_1fr]">
+        {/* Left Sidebar: Collapsible navigation pane */}
         <DashboardSidebar />
 
-        <FeedSourcesList />
+        {/* Content Pane Area */}
+        <div className="flex-1 min-w-0">
+          {/* Desktop Layout: Split Timeline and Reader view */}
+          <div className="hidden md:grid min-h-[calc(100vh-4rem)] grid-cols-[minmax(18rem,24rem)_1fr]">
+            <ArticlesList />
+            <ArticleViewer />
+          </div>
 
-        <main className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[minmax(18rem,26rem)_1fr]">
-          <ArticlesList />
-          <ArticleViewer />
-        </main>
+          {/* Mobile Layout: Panel-swapping single view */}
+          <div className="md:hidden min-h-[calc(100vh-4rem)] flex flex-col">
+            {viewMode === "sources" && <FeedSourcesList />}
+            {viewMode === "articles" && <ArticlesList />}
+            {viewMode === "reader" && <ArticleViewer />}
+          </div>
+        </div>
       </div>
 
       <AddFeedModal />

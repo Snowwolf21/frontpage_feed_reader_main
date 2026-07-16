@@ -41,8 +41,10 @@ async function fetchWithTimeoutAndRetry(
       clearTimeout(timer);
       lastError = err;
       if (attempt < retries - 1) {
-        // Wait 500ms before retrying to allow socket release or remote rate limit resolution
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Wait with randomized jitter (300ms - 800ms) before retrying to prevent retry storms
+        // and allow transient socket/limit resolution.
+        const jitter = Math.floor(Math.random() * 500) + 300;
+        await new Promise((resolve) => setTimeout(resolve, jitter));
       }
     }
   }

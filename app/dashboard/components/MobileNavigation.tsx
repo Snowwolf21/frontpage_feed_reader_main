@@ -3,6 +3,7 @@
 import { FileUp, LogIn, LogOut, Moon, Plus, Sun } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
 import type { Subscription } from "@/app/store/useStore";
+import { Button } from "@/components/ui/button";
 
 interface MobileNavigationProps {
   sampleSubscriptions: Subscription[];
@@ -29,14 +30,15 @@ export default function MobileNavigation({ sampleSubscriptions }: MobileNavigati
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-zinc-200 bg-white/95 pb-safe px-2 py-3 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden">
-      <button
+      <Button
+        variant="ghost"
         type="button"
         onClick={() => setIsAddOpen(true)}
-        className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white"
+        className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white h-auto p-0 font-normal hover:bg-transparent"
       >
         <Plus className="h-5 w-5" />
         <span>Add</span>
-      </button>
+      </Button>
       <label className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white cursor-pointer">
         <FileUp className="h-5 w-5" />
         <span>Import</span>
@@ -47,32 +49,35 @@ export default function MobileNavigation({ sampleSubscriptions }: MobileNavigati
           onChange={(event) => handleImportOpml(event.target.files?.[0] || null)} 
         />
       </label>
-      <button
+      <Button
+        variant="ghost"
         type="button"
         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white"
+        className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-white h-auto p-0 font-normal hover:bg-transparent"
       >
         {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         <span>Theme</span>
-      </button>
+      </Button>
       {user ? (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-red-500"
+          className="flex flex-col items-center gap-1 text-xs text-zinc-500 hover:text-red-500 h-auto p-0 font-normal hover:bg-transparent"
         >
           <LogOut className="h-5 w-5" />
           <span>Logout</span>
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setIsAuthOpen(true)}
-          className="flex flex-col items-center gap-1 text-xs text-zinc-950 dark:text-white"
+          className="flex flex-col items-center gap-1 text-xs text-zinc-950 dark:text-white h-auto p-0 font-normal hover:bg-transparent"
         >
           <LogIn className="h-5 w-5" />
           <span>Log in</span>
-        </button>
+        </Button>
       )}
     </nav>
   );

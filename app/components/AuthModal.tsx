@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Eye, EyeOff, Loader } from "lucide-react";
-import Button from "./Button";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Logo from "@/components/ui/logo";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
@@ -337,11 +337,11 @@ function AuthModalContent({
                   )}
                   <Button
                     type="submit"
-                    text={isSubmitting ? "Sending..." : "Send reset link"}
-                    fullWidth
                     disabled={isSubmitting}
-                    className="mt-2 bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold disabled:opacity-50"
-                  />
+                    className="mt-2 w-full bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Sending..." : "Send reset link"}
+                  </Button>
                   <button
                     type="button"
                     onClick={() => { resetFields(); setView("login"); }}
@@ -542,11 +542,11 @@ function AuthModalContent({
 
                 <Button
                   type="submit"
-                  text={isSubmitting ? "Please wait..." : view === "login" ? "Log in" : "Create account"}
-                  fullWidth
                   disabled={isSubmitting}
-                  className="mt-2 bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
+                  className="mt-2 w-full bg-white text-zinc-900 hover:bg-zinc-200 border-none py-4 text-lg font-bold shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Please wait..." : view === "login" ? "Log in" : "Create account"}
+                </Button>
               </form>
             </>
           )}

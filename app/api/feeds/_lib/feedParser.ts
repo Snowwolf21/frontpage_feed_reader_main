@@ -1,4 +1,5 @@
 import Parser from 'rss-parser';
+import dns from 'dns';
 
 export type CustomItem = {
   author?: string;
@@ -109,6 +110,18 @@ export async function validateSafeUrl(
   // Block localhost by name
   if (hostname === 'localhost' || hostname.endsWith('.local')) {
     return { ok: false, message: 'Requests to localhost or local network hosts are not allowed.' };
+  }
+
+  // Resolve hostname to check actual target IPs to prevent SSRF DNS Rebinding or private IP mapping
+  try {
+    const lookup = await dns.promises.lookup(hostname, { all: true });
+    for (const entry of lookup) {
+      if (PRIVATE_IP_PATTERN.test(entry.address)) {
+        return { ok: false, message: 'Requests to private or reserved IP ranges are not allowed.' };
+      }
+    }
+  } catch {
+    return { ok: false, message: 'Could not resolve host domain.' };
   }
 
   return httpCheck;

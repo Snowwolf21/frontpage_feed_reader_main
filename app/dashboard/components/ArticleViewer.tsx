@@ -64,6 +64,8 @@ function sanitizeArticleHtml(html: string | null) {
   return doc.body.innerHTML;
 }
 
+import { Button } from "@/components/ui/button";
+
 export default function ArticleViewer() {
   const {
     subscriptions,
@@ -72,6 +74,7 @@ export default function ArticleViewer() {
     articleStates,
     saveArticleState,
     mounted,
+    setViewMode,
   } = useStore();
 
   const selectedSubscription = subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl);
@@ -94,6 +97,17 @@ export default function ArticleViewer() {
     <article className="max-h-[calc(100vh-4rem)] overflow-y-auto bg-white p-5 dark:bg-zinc-950 md:p-8">
       {selectedArticle ? (
         <div className="mx-auto max-w-3xl">
+          {/* Mobile Back Button */}
+          <div className="mb-6 flex md:hidden items-center justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewMode("articles")}
+              className="text-xs h-8 px-2.5"
+            >
+              ← Articles
+            </Button>
+          </div>
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold leading-tight">{selectedArticle.title}</h2>
@@ -140,7 +154,15 @@ export default function ArticleViewer() {
           />
         </div>
       ) : (
-        <div className="flex h-full items-center justify-center text-center text-zinc-500">
+        <div className="flex h-full flex-col items-center justify-center text-center text-zinc-500 gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setViewMode("articles")}
+            className="md:hidden text-xs h-8 px-2.5"
+          >
+            ← Articles
+          </Button>
           <div>
             <Rss className="mx-auto mb-3 h-8 w-8" />
             <p>Select a feed article to start reading.</p>

@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { Button } from "@/components/ui/button";
 
 export default function AddFeedModal() {
   const {
@@ -32,9 +33,9 @@ export default function AddFeedModal() {
       <form onSubmit={handleAddFeedSubmit} className="w-full max-w-md rounded-md bg-white p-5 shadow-xl dark:bg-zinc-900">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold">Add Feed</h2>
-          <button type="button" onClick={() => setIsAddOpen(false)} aria-label="Close">
+          <Button type="button" variant="ghost" size="icon" onClick={() => setIsAddOpen(false)} aria-label="Close">
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
         <label className="mb-2 block text-sm font-medium" htmlFor="feed-url">
           RSS or Atom URL
@@ -63,10 +64,10 @@ export default function AddFeedModal() {
           pattern="[A-Za-z0-9][A-Za-z0-9 &/_-]{1,39}"
           title="Use 2-40 characters: letters, numbers, spaces, &, /, _ or -."
         />
-        <button
+         <Button
           type="submit"
           disabled={isAddingFeed}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-zinc-900 font-semibold text-white disabled:opacity-60 dark:bg-white dark:text-zinc-950"
+          className="w-full h-10"
         >
           {isAddingFeed ? (
             <>
@@ -79,7 +80,7 @@ export default function AddFeedModal() {
           ) : (
             "Subscribe"
           )}
-        </button>
+        </Button>
       </form>
     </div>
   );
