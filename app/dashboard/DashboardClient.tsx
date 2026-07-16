@@ -5,6 +5,7 @@ import AuthModal from "@/app/components/AuthModal";
 import type { SampleFeeds } from "@/app/components/FeedDisplay";
 import { useStore } from "@/app/store/useStore";
 import type { Subscription } from "@/app/store/useStore";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import DashboardHeader from "./components/DashboardHeader";
 import DashboardSidebar from "./components/DashboardSidebar";
@@ -50,6 +51,9 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     viewMode,
     activeTab,
   } = useStore();
+
+  // Global keyboard shortcuts (j/k/r/b/v//)
+  useKeyboardShortcuts();
 
   // Effects
   useEffect(() => {
@@ -143,12 +147,20 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
 
       <DashboardHeader sampleSubscriptions={sampleSubscriptions} />
 
-      {/* View Swapping Layout */}
-      {activeTab === "discover" && <DiscoverView />}
-      {activeTab === "digest" && <DigestView />}
-      
+      {/* View Swapping Layout with CSS slide-in transitions */}
+      {activeTab === "discover" && (
+        <div key="discover" className="view-slide-in flex-1">
+          <DiscoverView />
+        </div>
+      )}
+      {activeTab === "digest" && (
+        <div key="digest" className="view-slide-in flex-1">
+          <DigestView />
+        </div>
+      )}
+
       {activeTab === "feed" && (
-        <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_1fr]">
+        <div key="feed" className="view-slide-in grid flex-1 grid-cols-1 md:grid-cols-[auto_1fr]">
           {/* Left Sidebar: Collapsible navigation pane */}
           <DashboardSidebar />
 

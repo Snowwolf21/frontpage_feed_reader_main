@@ -13,12 +13,18 @@ import Parser from "rss-parser";
 
 const MAX_FEED_BYTES = 5 * 1024 * 1024; // 5 MB hard cap — prevents OOM via huge feeds
 
+/**
+ * Fetch a remote URL with a per-attempt timeout and optional retries.
+ *
+ * The same AbortController signal is returned so callers can also abort
+ * in-progress body streaming — not just the initial connection.
+ */
 async function fetchWithTimeoutAndRetry(
   url: string,
   options: RequestInit,
-  timeoutMs: number = 4500,
-  retries: number = 2
-): Promise<Response> {
+  timeoutMs: number = 8000,
+  retries: number = 1
+): Promise<{ response: Response; controller: AbortController }> {
   let lastError: unknown;
   for (let attempt = 0; attempt < retries; attempt++) {
     const controller = new AbortController();
@@ -31,19 +37,17 @@ async function fetchWithTimeoutAndRetry(
       });
       clearTimeout(timer);
 
-      // If it returned a server error or rate limit, throw to retry it
+      // Retry on server error / rate limit
       if (response.status === 429 || (response.status >= 500 && response.status <= 599)) {
         throw new Error(`HTTP status ${response.status}`);
       }
 
-      return response;
+      return { response, controller };
     } catch (err) {
       clearTimeout(timer);
       lastError = err;
       if (attempt < retries - 1) {
-        // Wait with randomized jitter (300ms - 800ms) before retrying to prevent retry storms
-        // and allow transient socket/limit resolution.
-        const jitter = Math.floor(Math.random() * 500) + 300;
+        const jitter = Math.floor(Math.random() * 300) + 200;
         await new Promise((resolve) => setTimeout(resolve, jitter));
       }
     }
@@ -85,7 +89,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const fetchResponse = await fetchWithTimeoutAndRetry(raw, {
+    const { response: fetchResponse, controller } = await fetchWithTimeoutAndRetry(raw, {
       method: "GET",
       headers: {
         "User-Agent":
@@ -115,7 +119,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Stream body with manual byte counting — catches servers that lie about content-length
+    // Stream body with manual byte counting — catches servers that lie about content-length.
+    // The *same* AbortController from the fetch is reused here so a slow byte-trickle
+    // server is cut off by the same deadline, not left open until the OS socket timeout.
     const reader = fetchResponse.body?.getReader();
     if (!reader) {
       return NextResponse.json({ error: "Empty feed response." }, { status: 502 });
@@ -125,8 +131,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     let totalBytes = 0;
 
     while (true) {
+      // Each read() honours the same abort signal — if the controller fires mid-stream
+      // this will throw an AbortError and be caught by the outer catch block.
       const { done, value } = await reader.read();
       if (done) break;
+      if (controller.signal.aborted) {
+        reader.cancel();
+        throw Object.assign(new Error("abort"), { name: "AbortError" });
+      }
       totalBytes += value.byteLength;
       if (totalBytes > MAX_FEED_BYTES) {
         reader.cancel();

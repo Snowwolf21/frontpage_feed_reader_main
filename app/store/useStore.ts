@@ -92,6 +92,8 @@ interface StoreState {
   loadArticleStates: (feedUrl: string) => Promise<void>;
   saveArticleState: (feedUrl: string, article: NormalizedItem, patch: ArticleState) => Promise<void>;
   selectArticle: (feedUrl: string, article: NormalizedItem) => void;
+  selectNextArticle: () => void;
+  selectPrevArticle: () => void;
   addFeed: () => Promise<boolean>;
   importOpml: (file: File | null) => Promise<void>;
   removeSubscription: (subscription: Subscription) => Promise<void>;
@@ -331,6 +333,28 @@ export const useStore = create<StoreState>((set, get) => ({
   selectArticle: (feedUrl, article) => {
     set({ selectedArticle: article, viewMode: "reader" });
     get().saveArticleState(feedUrl, article, { read: true });
+  },
+
+  selectNextArticle: () => {
+    const { feedData, selectedArticle, selectedFeedUrl } = get();
+    const items = feedData?.items ?? [];
+    if (items.length === 0) return;
+    const currentIndex = selectedArticle
+      ? items.findIndex((item) => (item.guid || item.link || item.title) === (selectedArticle.guid || selectedArticle.link || selectedArticle.title))
+      : -1;
+    const nextIndex = Math.min(currentIndex + 1, items.length - 1);
+    get().selectArticle(selectedFeedUrl, items[nextIndex]);
+  },
+
+  selectPrevArticle: () => {
+    const { feedData, selectedArticle, selectedFeedUrl } = get();
+    const items = feedData?.items ?? [];
+    if (items.length === 0) return;
+    const currentIndex = selectedArticle
+      ? items.findIndex((item) => (item.guid || item.link || item.title) === (selectedArticle.guid || selectedArticle.link || selectedArticle.title))
+      : 0;
+    const prevIndex = Math.max(currentIndex - 1, 0);
+    get().selectArticle(selectedFeedUrl, items[prevIndex]);
   },
 
   addFeed: async () => {

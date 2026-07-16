@@ -1,20 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// 🌐 Production Environment Domain Fallback
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://snowwolfrssfeed.vercel.app";
 
 // 🎨 Viewport & Theme Optimization (Separated in Next.js 14+)
@@ -115,7 +104,7 @@ export default async function RootLayout({
       className="h-full antialiased"
       suppressHydrationWarning
     >
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col bg-zinc-950 text-zinc-50`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} min-h-full flex flex-col bg-zinc-950 text-zinc-50`}>
         {children}
       </body>
     </html>
