@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { Bookmark, Check } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
 import type { NormalizedItem } from "@/app/api/feeds/_lib/feedParser";
@@ -25,9 +27,22 @@ export default function ArticlesList() {
     selectArticle,
     saveArticleState,
     setViewMode,
+    search,
   } = useStore();
 
   const selectedSubscription = subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl);
+
+  const filteredItems = useMemo(() => {
+    if (!feedData || !feedData.items) return [];
+    const query = search.trim().toLowerCase();
+    if (!query) return feedData.items;
+    return feedData.items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(query) ||
+        (item.summary && item.summary.toLowerCase().includes(query)) ||
+        (item.content && item.content.toLowerCase().includes(query))
+    );
+  }, [feedData, search]);
 
   const handleSelectArticle = (article: NormalizedItem) => {
     selectArticle(selectedFeedUrl, article);
@@ -45,7 +60,7 @@ export default function ArticlesList() {
       <div className="border-b border-zinc-200 p-4 dark:border-zinc-800 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">{selectedSubscription?.title || feedData?.title || "Select a feed"}</p>
-          <p className="mt-1 text-xs text-zinc-500">{feedData?.items?.length || 0} articles loaded</p>
+          <p className="mt-1 text-xs text-zinc-500">{filteredItems.length} articles loaded</p>
         </div>
         <Button
           type="button"
@@ -58,8 +73,11 @@ export default function ArticlesList() {
       </div>
       <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
         {isLoadingFeed && <p className="p-4 text-sm text-zinc-500">Loading feed...</p>}
+        {!isLoadingFeed && filteredItems.length === 0 && feedData?.items && (
+          <p className="p-4 text-sm text-zinc-500 text-center">No articles match your search.</p>
+        )}
         {!isLoadingFeed &&
-          feedData?.items?.map((article) => {
+          filteredItems.map((article) => {
             const state = articleStates[articleKey(selectedFeedUrl, article)] || {};
             return (
               <div
