@@ -1,4 +1,5 @@
 "use client";
+"use no memo"; 
 
 import { useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -16,8 +17,6 @@ function stripHtml(html: string | null) {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-// Estimated average height per article card (px). Used by the virtualizer
-// to allocate scroll space before items are measured.
 const ESTIMATED_ITEM_HEIGHT = 128;
 
 export default function ArticlesList() {
@@ -62,11 +61,12 @@ export default function ArticlesList() {
   // ── Virtual Scroll Setup ──────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual handles its own render caching safely
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => ESTIMATED_ITEM_HEIGHT,
-    overscan: 5, // Render 5 extra items outside viewport for smooth scrolling
+    overscan: 5,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -88,7 +88,6 @@ export default function ArticlesList() {
         </Button>
       </div>
 
-      {/* Scroll container for the virtualizer */}
       <div
         ref={scrollContainerRef}
         className="max-h-[calc(100vh-8rem)] overflow-y-auto"
@@ -98,13 +97,11 @@ export default function ArticlesList() {
           <p className="p-4 text-sm text-zinc-500 text-center">No articles match your search.</p>
         )}
 
-        {/* Virtual scroll outer container: total height allocated for all items */}
         {!isLoadingFeed && filteredItems.length > 0 && (
           <div
             style={{ height: `${virtualizer.getTotalSize()}px` }}
             className="relative w-full"
           >
-            {/* Only render the visible virtual items */}
             {virtualItems.map((virtualItem) => {
               const article = filteredItems[virtualItem.index];
               const state = articleStates[articleKey(selectedFeedUrl, article)] || {};
@@ -130,7 +127,6 @@ export default function ArticlesList() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Read/Unread dot indicator */}
                     <button
                       type="button"
                       onClick={(e) => {

@@ -14,6 +14,7 @@ interface ApiRequestOptions<T, R> {
 export function useApi<R = unknown>() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  
   // 2. FIXED: Use the response generic or null for state tracking
   const [data, setData] = useState<R | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
