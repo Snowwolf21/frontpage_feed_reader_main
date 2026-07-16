@@ -45,11 +45,12 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
     setIsAddOpen,
     setIsAuthOpen,
     setTheme,
-    setStatus,
     importOpml,
     logout,
     setActiveCategory,
     setSelectedFeedUrl,
+    activeTab,
+    setActiveTab,
   } = useStore();
 
   const categories = useMemo(
@@ -130,10 +131,43 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <nav className="hidden items-center gap-4 text-sm font-medium text-zinc-500 md:flex">
-            <button type="button" className="text-zinc-950 dark:text-white">Feed</button>
-            <button type="button" onClick={() => setStatus("Digest — coming soon!")} className="hover:text-zinc-950 dark:hover:text-white transition-colors">Digest</button>
-            <button type="button" onClick={() => setStatus("Discover — coming soon!")} className="hover:text-zinc-950 dark:hover:text-white transition-colors">Discover</button>
+          <nav className="hidden items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/80 p-0.5 rounded-full border border-zinc-200/50 dark:border-zinc-850/50 md:flex">
+            <button
+              type="button"
+              onClick={() => setActiveTab("feed")}
+              aria-current={activeTab === "feed" ? "page" : undefined}
+              className={`rounded-full px-3 py-1 text-xs transition-all duration-150 outline-none cursor-pointer ${
+                activeTab === "feed"
+                  ? "bg-white text-zinc-950 shadow-xs dark:bg-zinc-800 dark:text-zinc-50 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+              }`}
+            >
+              Feed
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("digest")}
+              aria-current={activeTab === "digest" ? "page" : undefined}
+              className={`rounded-full px-3 py-1 text-xs transition-all duration-150 outline-none cursor-pointer ${
+                activeTab === "digest"
+                  ? "bg-white text-zinc-950 shadow-xs dark:bg-zinc-800 dark:text-zinc-50 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+              }`}
+            >
+              Digest
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("discover")}
+              aria-current={activeTab === "discover" ? "page" : undefined}
+              className={`rounded-full px-3 py-1 text-xs transition-all duration-150 outline-none cursor-pointer ${
+                activeTab === "discover"
+                  ? "bg-white text-zinc-950 shadow-xs dark:bg-zinc-800 dark:text-zinc-50 font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+              }`}
+            >
+              Discover
+            </button>
           </nav>
         </div>
 

@@ -13,6 +13,8 @@ import ArticlesList from "./components/ArticlesList";
 import ArticleViewer from "./components/ArticleViewer";
 import AddFeedModal from "./components/AddFeedModal";
 import MobileNavigation from "./components/MobileNavigation";
+import DiscoverView from "./components/DiscoverView";
+import DigestView from "./components/DigestView";
 
 const THEME_KEY = "frontpage:theme";
 
@@ -46,6 +48,7 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     selectedFeedUrl,
     setIsSidebarCollapsed,
     viewMode,
+    activeTab,
   } = useStore();
 
   // Effects
@@ -140,31 +143,36 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
 
       <DashboardHeader sampleSubscriptions={sampleSubscriptions} />
 
-      {/* Responsive Multi-Pane Grid Layout */}
-      <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_1fr]">
-        {/* Left Sidebar: Collapsible navigation pane */}
-        <DashboardSidebar />
+      {/* View Swapping Layout */}
+      {activeTab === "discover" && <DiscoverView />}
+      {activeTab === "digest" && <DigestView />}
+      
+      {activeTab === "feed" && (
+        <div className="grid flex-1 grid-cols-1 md:grid-cols-[auto_1fr]">
+          {/* Left Sidebar: Collapsible navigation pane */}
+          <DashboardSidebar />
 
-        {/* Content Pane Area */}
-        <div className="flex-1 min-w-0">
-          {/* Desktop Layout: Split Timeline and Reader view */}
-          <div className="hidden md:grid min-h-[calc(100vh-4rem)] grid-cols-[minmax(18rem,24rem)_1fr]">
-            <ArticlesList />
-            <ArticleViewer />
-          </div>
+          {/* Content Pane Area */}
+          <div className="flex-1 min-w-0">
+            {/* Desktop Layout: Split Timeline and Reader view */}
+            <div className="hidden md:grid min-h-[calc(100vh-4rem)] grid-cols-[minmax(18rem,24rem)_1fr]">
+              <ArticlesList />
+              <ArticleViewer />
+            </div>
 
-          {/* Mobile Layout: Panel-swapping single view */}
-          <div className="md:hidden min-h-[calc(100vh-4rem)] flex flex-col">
-            {viewMode === "sources" && <FeedSourcesList />}
-            {viewMode === "articles" && <ArticlesList />}
-            {viewMode === "reader" && <ArticleViewer />}
+            {/* Mobile Layout: Panel-swapping single view */}
+            <div className="md:hidden min-h-[calc(100vh-4rem)] flex flex-col">
+              {viewMode === "sources" && <FeedSourcesList />}
+              {viewMode === "articles" && <ArticlesList />}
+              {viewMode === "reader" && <ArticleViewer />}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <AddFeedModal />
 
-      <MobileNavigation sampleSubscriptions={sampleSubscriptions} />
+      <MobileNavigation />
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onSuccess={refreshSession} />
     </div>

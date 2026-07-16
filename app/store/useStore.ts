@@ -58,6 +58,7 @@ interface StoreState {
   mounted: boolean;
   isSidebarCollapsed: boolean;
   viewMode: "sources" | "articles" | "reader";
+  activeTab: "feed" | "digest" | "discover";
 
   // Simple Setters
   setUser: (user: UserProfile | null) => void;
@@ -81,6 +82,7 @@ interface StoreState {
   setMounted: (mounted: boolean) => void;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   setViewMode: (mode: "sources" | "articles" | "reader") => void;
+  setActiveTab: (tab: "feed" | "digest" | "discover") => void;
 
   // Actions
   toggleSidebar: () => void;
@@ -119,6 +121,7 @@ export const useStore = create<StoreState>((set, get) => ({
   mounted: false,
   isSidebarCollapsed: false,
   viewMode: "sources",
+  activeTab: "feed",
 
   // Setters
   setUser: (user) => set({ user }),
@@ -127,6 +130,7 @@ export const useStore = create<StoreState>((set, get) => ({
   setActiveCategory: (activeCategory) => set({ activeCategory }),
   setSelectedFeedUrl: (selectedFeedUrl) => set({ selectedFeedUrl, viewMode: "articles" }),
   setViewMode: (viewMode) => set({ viewMode }),
+  setActiveTab: (activeTab) => set({ activeTab }),
   setSearch: (search) => set({ search }),
   setFeedData: (feedData) => set({ feedData }),
   setSelectedArticle: (selectedArticle) => set({ selectedArticle }),
