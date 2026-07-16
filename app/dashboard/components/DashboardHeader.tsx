@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FileUp,
@@ -13,6 +13,7 @@ import {
   User,
   Folder,
   ChevronDown,
+  X,
 } from "lucide-react";
 import Logo from "@/components/ui/logo";
 import { useStore } from "@/app/store/useStore";
@@ -52,6 +53,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
     activeTab,
     setActiveTab,
   } = useStore();
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const categories = useMemo(
     () => ["All Feeds", ...Array.from(new Set(subscriptions.map((sub) => sub.category || "General")))],
@@ -73,7 +75,35 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
 
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90">
-      <div className="flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
+      <div className="relative flex h-16 items-center justify-between gap-4 px-4 lg:px-6">
+        {/* Mobile Search Overlay */}
+        {isMobileSearchOpen && (
+          <div className="absolute inset-x-0 inset-y-0 z-40 flex items-center bg-white px-4 dark:bg-zinc-950 gap-3 border-b border-zinc-200 dark:border-zinc-800 md:hidden">
+            <SearchIcon className="h-4 w-4 text-zinc-400 shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search feeds..."
+              autoFocus
+              className="h-9 flex-1 bg-transparent text-sm outline-none text-zinc-900 dark:text-zinc-50"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setIsMobileSearchOpen(false);
+                setSearch("");
+              }}
+              className="h-9 w-9 text-zinc-500 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+              aria-label="Close search"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <div className="flex items-center gap-3 md:gap-5">
           <Link href="/" className="flex items-center gap-2 font-bold shrink-0">
             <Logo />
@@ -172,7 +202,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
         </div>
 
         <div className="flex flex-1 md:flex-none justify-end items-center gap-2">
-          <div className="relative w-full max-w-xs md:w-48">
+          <div className="relative hidden md:block w-48">
             <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
@@ -182,6 +212,18 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               className="h-9 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
             />
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="flex md:hidden h-9 w-9 shrink-0 cursor-pointer"
+            aria-label="Open search"
+          >
+            <SearchIcon className="h-4 w-4" />
+          </Button>
+
           <Button
             type="button"
             variant="outline"
