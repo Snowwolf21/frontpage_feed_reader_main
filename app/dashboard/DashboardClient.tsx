@@ -33,6 +33,8 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
 
   // Bind Zustand Store state & actions
   const {
+    user,
+    logout,
     isLoadingSession,
     isAuthOpen,
     theme,
@@ -105,6 +107,54 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
   useEffect(() => {
     loadArticleStates(selectedFeedUrl);
   }, [selectedFeedUrl, loadArticleStates]);
+
+  // Browser Back/Forward history state tracking
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Check if we already have the dashboard state in history
+    const hasState = history.state && history.state.page === "dashboard";
+    if (!hasState) {
+      // Push state to history to intercept back button correctly
+      history.pushState({ page: "dashboard", index: history.length }, "");
+    }
+
+    const initialIndex = history.state?.index ?? history.length;
+
+    const handlePopState = async (event: PopStateEvent) => {
+      const state = event.state;
+      const currentIndex = state?.index;
+
+      if (!state || state.page !== "dashboard" || (typeof currentIndex === "number" && currentIndex < initialIndex)) {
+        // Back button action -> log out and redirect to home
+        console.log("Back navigation detected: logging out...");
+        await logout(sampleSubscriptions);
+        window.location.href = "/";
+      } else if (typeof currentIndex === "number" && currentIndex > initialIndex) {
+        // Forward button action -> request login
+        console.log("Forward navigation detected: opening login modal...");
+        setIsAuthOpen(true);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [mounted, logout, sampleSubscriptions, setIsAuthOpen]);
+
+  // Handle browser-level full-page reload forward/history navigation when unauthenticated
+  useEffect(() => {
+    if (isLoadingSession) return;
+    try {
+      const navigationEntry = window.performance?.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+      if (navigationEntry?.type === "back_forward" && !user) {
+        setIsAuthOpen(true);
+      }
+    } catch (e) {
+      console.warn("Performance Navigation API not supported:", e);
+    }
+  }, [isLoadingSession, user, setIsAuthOpen]);
 
   // Prevent flash or parsing errors during absolute early server pass
   if (!mounted) {

@@ -11,8 +11,7 @@ import {
   SearchIcon,
   Sun,
   User,
-  Folder,
-  ChevronDown,
+  Menu,
   X,
 } from "lucide-react";
 import Logo from "@/components/ui/logo";
@@ -40,7 +39,6 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
     search,
     theme,
     subscriptions,
-    activeCategory,
     selectedFeedUrl,
     setSearch,
     setIsAddOpen,
@@ -60,10 +58,10 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
     [subscriptions]
   );
 
-  const selectedSubscription = useMemo(
-    () => subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl),
-    [subscriptions, selectedFeedUrl]
-  );
+  // const selectedSubscription = useMemo(
+  //   () => subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl),
+  //   [subscriptions, selectedFeedUrl]
+  // );
 
   const handleImportOpml = async (file: File | null) => {
     await importOpml(file);
@@ -71,6 +69,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
 
   const handleLogout = async () => {
     await logout(sampleSubscriptions);
+    window.location.href = "/";
   };
 
   return (
@@ -86,7 +85,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search feeds..."
               autoFocus
-              className="h-9 flex-1 bg-transparent text-sm outline-none text-zinc-900 dark:text-zinc-50"
+              className="h-9 flex-1 bg-transparent text-sm outline-none text-zinc-900 dark:text-zinc-50 border border-zinc-300 rounded-lg px-2 mr-1"
             />
             <Button
               type="button"
@@ -105,61 +104,11 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
         )}
 
         <div className="flex items-center gap-3 md:gap-5">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold shrink-0">
+          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 font-bold shrink-0">
             <Logo />
           </Link>
-         
-          {/* Mobile Categories & Feed Sources Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs md:hidden shrink-0 h-9 px-3 border border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50 rounded-lg cursor-pointer transition-colors outline-none">
-              <Folder className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-              <span className="max-w-[90px] truncate">{selectedSubscription?.title || activeCategory}</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-zinc-950 border border-zinc-800 text-zinc-50 p-2">
-              <div className="px-2 py-1 text-xs font-bold text-zinc-500 uppercase tracking-wider">Categories</div>
-              <DropdownMenuSeparator className="bg-zinc-800 my-1.5" />
-              {categories.map((category) => {
-                const categoryFeeds = subscriptions.filter(
-                  (sub) => category === "All Feeds" || sub.category === category
-                );
+          
 
-                return (
-                  <DropdownMenuSub key={category}>
-                    <DropdownMenuSubTrigger className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer">
-                      <span className="truncate">{category} ({categoryFeeds.length})</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-64 bg-zinc-950 border border-zinc-800 text-zinc-50">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setActiveCategory(category);
-                          setSelectedFeedUrl(""); // Show all in this category
-                        }}
-                        className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer font-semibold"
-                      >
-                        All in {category}
-                      </DropdownMenuItem>
-                      {categoryFeeds.length > 0 && <DropdownMenuSeparator className="bg-zinc-800" />}
-                      {categoryFeeds.map((feed) => (
-                        <DropdownMenuItem
-                          key={feed.feedUrl}
-                          onClick={() => {
-                            setActiveCategory(category);
-                            setSelectedFeedUrl(feed.feedUrl);
-                          }}
-                          className={`hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer text-xs ${
-                            selectedFeedUrl === feed.feedUrl ? "bg-zinc-900 font-bold" : ""
-                          }`}
-                        >
-                          <span className="truncate">{feed.title}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           <nav className="hidden items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/80 p-0.5 rounded-full border border-zinc-200/50 dark:border-zinc-850/50 md:flex">
             <button
@@ -209,7 +158,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search feeds"
-              className="h-9 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-8 pr-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+              className="h-9 w-full rounded-md border border-zinc-300 bg-zinc-50 pl-8 pr-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
             />
           </div>
 
@@ -234,6 +183,70 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+
+          {/* Mobile Categories & Feed Sources Dropdown (moved to the right of theme toggle) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs md:hidden shrink-0 h-9 px-3 border border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50 rounded-lg cursor-pointer transition-colors outline-none">
+              <Menu className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+              {/* <span className="max-w-[90px] truncate">{selectedSubscription?.title || activeCategory}</span> */}
+              {/* <ChevronDown className="h-3 w-3 opacity-60" /> */}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border border-zinc-800 text-zinc-50 p-2">
+              <div className="px-2 py-1 text-xs font-bold text-zinc-500 uppercase tracking-wider">Categories</div>
+              <DropdownMenuSeparator className="bg-zinc-800 my-1.5" />
+              {categories.map((category) => {
+                const categoryFeeds = subscriptions.filter(
+                  (sub) => category === "All Feeds" || sub.category === category
+                );
+
+                return (
+                  <DropdownMenuSub key={category}>
+                    <DropdownMenuSubTrigger className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer">
+                      <span className="truncate">{category} ({categoryFeeds.length})</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-64 bg-zinc-950 border border-zinc-800 text-zinc-50">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setActiveCategory(category);
+                          setSelectedFeedUrl(""); // Show all in this category
+                        }}
+                        className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer font-semibold"
+                      >
+                        All in {category}
+                      </DropdownMenuItem>
+                      {categoryFeeds.length > 0 && <DropdownMenuSeparator className="bg-zinc-800" />}
+                      {categoryFeeds.map((feed) => (
+                        <DropdownMenuItem
+                          key={feed.feedUrl}
+                          onClick={() => {
+                            setActiveCategory(category);
+                            setSelectedFeedUrl(feed.feedUrl);
+                          }}
+                          className={`hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer text-xs ${
+                            selectedFeedUrl === feed.feedUrl ? "bg-zinc-900 font-bold" : ""
+                          }`}
+                        >
+                          <span className="truncate">{feed.title}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                );
+              })}
+              {user && (
+                <>
+                  <DropdownMenuSeparator className="bg-zinc-800 my-1.5" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer text-red-400 hover:text-red-500 font-semibold flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             type="button"

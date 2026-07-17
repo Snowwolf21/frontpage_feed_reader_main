@@ -17,7 +17,19 @@ export async function POST(
   req: NextRequest
 ): Promise<NextResponse> {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid or empty JSON body.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     if (typeof body !== "object" || body === null) {
       return NextResponse.json(
