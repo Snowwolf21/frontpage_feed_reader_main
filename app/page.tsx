@@ -4,8 +4,10 @@ import Link from "next/link";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { useState } from "react";
-import AuthModal from "./components/AuthModal";
+import dynamic from "next/dynamic";
 import { useSkipToMain } from "./hooks/useSkipToMain";
+
+const AuthModal = dynamic(() => import("./components/AuthModal"), { ssr: false });
 import {
   InfiniteFeedIcon,
   StarIcon,
@@ -64,18 +66,28 @@ const PRICING_TIERS = [
 
 export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalView, setAuthModalView] = useState<"login" | "signup">("login");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
-  const { mainRef } = useSkipToMain();
+  const { mainRef, skipToMain } = useSkipToMain();
+
+  const openAuth = (view: "login" | "signup") => {
+    setAuthModalView(view);
+    setIsAuthModalOpen(true);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-50 font-sans selection:bg-white/20">
-    
-
+      <button
+        onClick={skipToMain}
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-zinc-950 focus:rounded-md focus:font-semibold cursor-pointer"
+      >
+        Skip to content
+      </button>
       {/* Cinematic Ambient Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-linear-to-b from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-[-40%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-250 h-100 bg-linear-to-b from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-40%] left-[10%] w-150 h-150 bg-blue-500/5 rounded-full blur-[160px] pointer-events-none" />
 
-      <Header />
+      <Header onOpenLogin={() => openAuth("login")} />
 
       <main
         ref={mainRef}
@@ -94,7 +106,7 @@ export default function Home() {
         {/* Call to Actions with High-End Micro-shadows */}
         <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200 mb-32">
           <button
-            onClick={() => setIsAuthModalOpen(true)}
+            onClick={() => openAuth("signup")}
             className="w-full sm:w-auto px-8 py-4 bg-slate-400 text-zinc-800 font-semibold rounded-2xl active:bg-slate-700 active:text-slate-200 md:hover:text-slate-200 md:hover:bg-slate-600 active:scale-[0.99] cursor-pointer focus:outline-2 focus:outline-offset-4 focus:outline-white transition-colors duration-200"
             aria-label="Initialize enterprise or free account tier"
           >
@@ -110,8 +122,8 @@ export default function Home() {
 
         {/* 1. Brand Value Proposition Statement */}
         <div className="w-full max-w-4xl mb-32 opacity-80 transition-opacity duration-500">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-4 font-semibold">Our Philosophy</p>
-          <p className="text-zinc-400 max-w-2xl mx-auto text-sm leading-relaxed font-light">
+          <p className="text-md uppercase tracking-widest text-zinc-300 mb-4 font-semibold">Our Philosophy</p>
+          <p className="text-zinc-300 max-w-2xl mx-auto text-md leading-relaxed font-light">
             We believe that reading should be clean, secure, and under your control. Frontpage is built with no tracking, no algorithms, and direct feed access.
           </p>
         </div>
@@ -126,7 +138,7 @@ export default function Home() {
               <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center mb-6 text-zinc-300 group-hover:text-white group-hover:border-zinc-700 transition-colors shrink-0">
                 {card.svg}
               </div>  
-              <h3 className="font-bold text-zinc-100 text-lg mb-3 tracking-tight">{card.title}</h3>
+              <h2 className="font-bold text-zinc-100 text-lg mb-3 tracking-tight">{card.title}</h2>
               <p className="text-sm text-zinc-200 leading-relaxed font-light">
                 {card.description}
               </p>
@@ -135,7 +147,7 @@ export default function Home() {
         </div>
 
         {/* Interactive Pricing Section */}
-        <div className="w-full border-t border-zinc-900 pt-24 max-w-4xl mx-auto">
+        <div className="w-full border-t border-zinc-900 pt-24 max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Transparent, performance-based pricing.</h2>
           <p className="text-zinc-400 text-sm md:text-base font-light mb-8">Choose the pipeline velocity that aligns with your daily reading demands.</p>
           
@@ -143,20 +155,20 @@ export default function Home() {
           <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-700 border border-slate-700 mb-12">
             <button 
               onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${billingCycle === "monthly" ? "bg-slate-900 text-white shadow-md" : "text-zinc-400 hover:text-zinc-200"}`}
+              className={`px-4 py-2 text-xs font-semibold cursor-pointer rounded-lg transition-all ${billingCycle === "monthly" ? "bg-slate-900 text-white shadow-md" : "text-slate-200 hover:text-white"}`}
             >
               Monthly billing
             </button>
             <button 
               onClick={() => setBillingCycle("yearly")}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${billingCycle === "yearly" ? "bg-slate-900 text-white shadow-md" : "text-zinc-400 hover:text-zinc-200"}`}
+              className={`px-4 py-2 text-xs font-semibold cursor-pointer rounded-lg transition-all flex items-center gap-1.5 ${billingCycle === "yearly" ? "bg-slate-900 text-white shadow-md" : "text-slate-200 hover:text-white"}`}
             >
-              Annual plan <span className="px-1.5 py-0.5 rounded-md bg-slate-500/20 text-indigo-500 text-[10px] uppercase font-bold tracking-wider">Save 20%</span>
+              Annual plan <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] uppercase font-bold tracking-wider">Save 20%</span>
             </button>
           </div>
 
-          {/* 3. Fully Dynamic Pricing Tier Cards Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-2xl mx-auto ">
+          {/* Pricing Tier Cards Matrix */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-2xl mx-auto">
             {PRICING_TIERS.map((tier) => {
               const currentPrice = billingCycle === "yearly" ? tier.yearlyPrice : tier.basePrice;
 
@@ -176,16 +188,16 @@ export default function Home() {
                     </div>
                   )}
 
-                  <h4 className={`text-sm font-semibold uppercase tracking-wider ${tier.highlighted ? "text-slate-400" : "text-zinc-400"}`}>
+                  <h3 className={`text-sm font-semibold uppercase tracking-wider ${tier.highlighted ? "text-slate-400" : "text-zinc-400"}`}>
                     {tier.name}
-                  </h4>
+                  </h3>
 
-                  <div className="text-4xl font-black font-mono tracking-tight mt-4">
+                  <div className="text-4xl font-bold font-mono tracking-wider mt-4">
                     ${currentPrice}
-                    {currentPrice > 0 && <span className="text-sm font-medium text-zinc-200"> / month</span>}
+                    {currentPrice > 0 && <span className="text-sm font-medium text-zinc-200">/month</span>}
                   </div>
 
-                  <p className="text-xs text-zinc-200 mt-2">{tier.description}</p>
+                  <p className="text-sm text-zinc-300 mt-2">{tier.description}</p>
                   <div className="h-px bg-zinc-400 my-6" />
 
                   {/* Nested Dynamic Feature List Injection */}
@@ -212,7 +224,7 @@ export default function Home() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        initialView="signup"
+        initialView={authModalView}
       />
     </div>
   );

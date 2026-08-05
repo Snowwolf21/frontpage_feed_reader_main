@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { Newspaper, BookOpen, Clock, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { NormalizedItem, MultiFeedEntry } from "@/app/api/feeds/_lib/feedParser";
+import { Footer } from "@/app/components/Footer";
 
 interface AggregatedArticle extends NormalizedItem {
   feedUrl: string;
@@ -19,7 +21,16 @@ export default function DigestView() {
     setSelectedFeedUrl,
     setActiveCategory,
     selectArticle,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      articleStates: s.articleStates,
+      setActiveTab: s.setActiveTab,
+      setSelectedFeedUrl: s.setSelectedFeedUrl,
+      setActiveCategory: s.setActiveCategory,
+      selectArticle: s.selectArticle,
+    }))
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -216,7 +227,14 @@ export default function DigestView() {
                 <div
                   key={`${article.feedUrl}-${idx}`}
                   onClick={() => handleReadArticle(article)}
-                  className="pt-4 first:pt-0 group flex items-start justify-between gap-4 cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handleReadArticle(article);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="pt-4 first:pt-0 group flex items-start justify-between gap-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded-md px-2 -mx-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -244,6 +262,8 @@ export default function DigestView() {
             </div>
           )}
         </div>
+
+        <Footer variant="dashboard" className="mt-16 bg-transparent border-t border-zinc-200 dark:border-zinc-800 p-0 pt-8" />
       </div>
     </section>
   );

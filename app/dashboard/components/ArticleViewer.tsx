@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ExternalLink, Rss, Star } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { NormalizedItem } from "@/app/api/feeds/_lib/feedParser";
 
 function articleKey(feedUrl: string, article: NormalizedItem) {
@@ -57,6 +58,9 @@ function sanitizeArticleHtml(html: string | null) {
         element.remove();
       } else {
         element.setAttribute("loading", "lazy");
+        if (!element.getAttribute("alt")) {
+          element.setAttribute("alt", "Article content image");
+        }
       }
     }
   });
@@ -75,7 +79,17 @@ export default function ArticleViewer() {
     saveArticleState,
     mounted,
     setViewMode,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      selectedFeedUrl: s.selectedFeedUrl,
+      selectedArticle: s.selectedArticle,
+      articleStates: s.articleStates,
+      saveArticleState: s.saveArticleState,
+      mounted: s.mounted,
+      setViewMode: s.setViewMode,
+    }))
+  );
 
   const selectedSubscription = subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl);
   const selectedArticleState = selectedArticle ? articleStates[articleKey(selectedFeedUrl, selectedArticle)] || {} : {};
@@ -127,7 +141,7 @@ export default function ArticleViewer() {
               </button>
               {selectedArticle.link && (
                 <a
-                  href={selectedArticle.link}
+                   href={selectedArticle.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
@@ -140,7 +154,7 @@ export default function ArticleViewer() {
           </div>
           {selectedArticle.thumbnail && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={selectedArticle.thumbnail} alt="" className="mb-6 max-h-80 w-full rounded-md object-cover" />
+            <img src={selectedArticle.thumbnail} alt={selectedArticle.title || "Article thumbnail"} className="mb-6 max-h-80 w-full rounded-md object-cover" />
           )}
           <div
             className="feed-reader-content text-zinc-800 dark:text-zinc-100"

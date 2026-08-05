@@ -29,10 +29,15 @@ export default function AddFeedModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-feed-title"
+    >
       <form onSubmit={handleAddFeedSubmit} className="w-full max-w-md rounded-md bg-white p-5 shadow-xl dark:bg-zinc-900">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Add Feed</h2>
+          <h2 id="add-feed-title" className="text-lg font-bold">Add Feed</h2>
           <Button type="button" variant="ghost" size="icon" onClick={() => setIsAddOpen(false)} aria-label="Close">
             <X className="h-5 w-5" />
           </Button>
@@ -71,7 +76,7 @@ export default function AddFeedModal() {
         >
           {isAddingFeed ? (
             <>
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>

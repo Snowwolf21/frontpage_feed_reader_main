@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Rss, Trash2 } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { Subscription } from "@/app/store/useStore";
 
 export default function FeedSourcesList() {
@@ -13,7 +14,16 @@ export default function FeedSourcesList() {
     selectedFeedUrl,
     setSelectedFeedUrl,
     removeSubscription,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      activeCategory: s.activeCategory,
+      search: s.search,
+      selectedFeedUrl: s.selectedFeedUrl,
+      setSelectedFeedUrl: s.setSelectedFeedUrl,
+      removeSubscription: s.removeSubscription,
+    }))
+  );
 
   const visibleSubscriptions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();

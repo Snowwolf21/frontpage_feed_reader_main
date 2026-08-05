@@ -3,7 +3,6 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
-export const dynamic = 'force-dynamic';
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://snowwolfrssfeed.vercel.app";
 
 // 🎨 Viewport & Theme Optimization (Separated in Next.js 14+)

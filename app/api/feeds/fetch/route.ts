@@ -15,7 +15,6 @@ const MAX_FEED_BYTES = 5 * 1024 * 1024; // 5 MB hard cap — prevents OOM via hu
 
 /**
  * Fetch a remote URL with a per-attempt timeout and optional retries.
- *
  * The same AbortController signal is returned so callers can also abort
  * in-progress body streaming — not just the initial connection.
  */

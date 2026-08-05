@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Bookmark, Check } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { NormalizedItem } from "@/app/api/feeds/_lib/feedParser";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +32,20 @@ export default function ArticlesList() {
     saveArticleState,
     setViewMode,
     search,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      selectedFeedUrl: s.selectedFeedUrl,
+      feedData: s.feedData,
+      isLoadingFeed: s.isLoadingFeed,
+      articleStates: s.articleStates,
+      selectedArticle: s.selectedArticle,
+      selectArticle: s.selectArticle,
+      saveArticleState: s.saveArticleState,
+      setViewMode: s.setViewMode,
+      search: s.search,
+    }))
+  );
 
   const selectedSubscription = subscriptions.find((sub) => sub.feedUrl === selectedFeedUrl);
 
@@ -105,9 +119,11 @@ export default function ArticlesList() {
             {virtualItems.map((virtualItem) => {
               const article = filteredItems[virtualItem.index];
               const state = articleStates[articleKey(selectedFeedUrl, article)] || {};
-              const isSelected = selectedArticle === article ||
+              const isSelected = !!(
+                selectedArticle === article ||
                 (selectedArticle?.guid && selectedArticle.guid === article.guid) ||
-                (selectedArticle?.link && selectedArticle.link === article.link);
+                (selectedArticle?.link && selectedArticle.link === article.link)
+              );
 
               return (
                 <div
@@ -122,7 +138,15 @@ export default function ArticlesList() {
                     transform: `translateY(${virtualItem.start}px)`,
                   }}
                   onClick={() => handleSelectArticle(article)}
-                  className={`group block w-full border-b border-zinc-200 p-4 text-left hover:bg-white dark:border-zinc-800 dark:hover:bg-zinc-900 cursor-pointer transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handleSelectArticle(article);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  className={`group block w-full border-b border-zinc-200 p-4 text-left hover:bg-white dark:border-zinc-800 dark:hover:bg-zinc-900 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:z-10 ${
                     isSelected ? "bg-white dark:bg-zinc-900" : ""
                   }`}
                 >
@@ -133,8 +157,9 @@ export default function ArticlesList() {
                         e.stopPropagation();
                         handleToggleRead(article);
                       }}
-                      className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-all focus:outline-none"
+                      className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                       title={state.read ? "Mark as unread" : "Mark as read"}
+                      aria-label={state.read ? "Mark as unread" : "Mark as read"}
                     >
                       {state.read ? (
                         <div className="h-2.5 w-2.5 rounded-full border border-zinc-300 bg-transparent transition-colors hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:border-zinc-600 dark:hover:bg-zinc-800" />

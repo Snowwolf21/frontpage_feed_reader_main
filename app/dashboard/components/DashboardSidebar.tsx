@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 
 function getCategoryIcon(category: string) {
@@ -53,7 +54,21 @@ export default function DashboardSidebar() {
     selectedFeedUrl,
     setSelectedFeedUrl,
     removeSubscription,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      user: s.user,
+      subscriptions: s.subscriptions,
+      activeCategory: s.activeCategory,
+      status: s.status,
+      setActiveCategory: s.setActiveCategory,
+      isSidebarCollapsed: s.isSidebarCollapsed,
+      toggleSidebar: s.toggleSidebar,
+      search: s.search,
+      selectedFeedUrl: s.selectedFeedUrl,
+      setSelectedFeedUrl: s.setSelectedFeedUrl,
+      removeSubscription: s.removeSubscription,
+    }))
+  );
 
   const visibleSubscriptions = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -113,6 +128,7 @@ export default function DashboardSidebar() {
                 variant={activeCategory === category ? "default" : "ghost"}
                 onClick={() => setActiveCategory(category)}
                 title={isSidebarCollapsed ? `${category} (${count})` : undefined}
+                aria-label={isSidebarCollapsed ? `${category} (${count})` : undefined}
                 className={`flex w-full items-center transition-all font-normal h-9 ${
                   isSidebarCollapsed 
                     ? "justify-center px-0 w-10 mx-auto" 

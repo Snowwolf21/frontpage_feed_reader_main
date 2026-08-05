@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Compass, Plus, Check, Loader2, Rss } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
+import { Footer } from "@/app/components/Footer";
 
 interface CuratedFeedItem {
   title: string;
@@ -51,7 +53,14 @@ export default function DiscoverView() {
     addFeed,
     setFeedUrlInput,
     setCategoryInput,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      subscriptions: s.subscriptions,
+      addFeed: s.addFeed,
+      setFeedUrlInput: s.setFeedUrlInput,
+      setCategoryInput: s.setCategoryInput,
+    }))
+  );
 
   const [subscribingUrl, setSubscribingUrl] = useState<string | null>(null);
 
@@ -73,7 +82,7 @@ export default function DiscoverView() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500">
-            <Compass className="h-6 w-6" />
+            <Compass className="h-6 w-6" aria-hidden="true" />
           </div>
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight">Discover feeds</h2>
@@ -100,7 +109,7 @@ export default function DiscoverView() {
                     <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                       {item.category}
                     </span>
-                    <Rss className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                    <Rss className="h-4 w-4 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   </div>
                   <h3 className="mt-3 text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
                     {item.title}
@@ -117,7 +126,7 @@ export default function DiscoverView() {
                       disabled
                       className="w-full flex items-center justify-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 disabled:opacity-100"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4" aria-hidden="true" />
                       <span>Subscribed</span>
                     </Button>
                   ) : (
@@ -128,12 +137,12 @@ export default function DiscoverView() {
                     >
                       {isPending ? (
                         <>
-                          <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                          <Loader2 className="h-3 w-3 animate-spin shrink-0" aria-hidden="true" />
                           <span>Subscribing...</span>
                         </>
                       ) : (
                         <>
-                          <Plus className="h-3 w-3 shrink-0" />
+                          <Plus className="h-3 w-3 shrink-0" aria-hidden="true" />
                           <span>Subscribe</span>
                         </>
                       )}
@@ -144,6 +153,8 @@ export default function DiscoverView() {
             );
           })}
         </div>
+
+        <Footer variant="dashboard" className="mt-16 bg-transparent border-t border-zinc-200 dark:border-zinc-800 p-0 pt-8" />
       </div>
     </section>
   );

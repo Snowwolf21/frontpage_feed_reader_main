@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import AuthModal from "@/app/components/AuthModal";
+import dynamic from "next/dynamic";
 import type { SampleFeeds } from "@/app/components/FeedDisplay";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { Subscription } from "@/app/store/useStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
@@ -12,10 +13,12 @@ import DashboardSidebar from "./components/DashboardSidebar";
 import FeedSourcesList from "./components/FeedSourcesList";
 import ArticlesList from "./components/ArticlesList";
 import ArticleViewer from "./components/ArticleViewer";
-import AddFeedModal from "./components/AddFeedModal";
 import MobileNavigation from "./components/MobileNavigation";
 import DiscoverView from "./components/DiscoverView";
 import DigestView from "./components/DigestView";
+
+const AuthModal = dynamic(() => import("@/app/components/AuthModal"), { ssr: false });
+const AddFeedModal = dynamic(() => import("./components/AddFeedModal"), { ssr: false });
 
 const THEME_KEY = "frontpage:theme";
 
@@ -31,7 +34,6 @@ function flattenSampleFeeds(sampleFeeds: SampleFeeds): Subscription[] {
 export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFeeds }) {
   const sampleSubscriptions = useMemo(() => flattenSampleFeeds(sampleFeeds), [sampleFeeds]);
 
-  // Bind Zustand Store state & actions
   const {
     user,
     logout,
@@ -52,7 +54,29 @@ export default function DashboardClient({ sampleFeeds }: { sampleFeeds: SampleFe
     setIsSidebarCollapsed,
     viewMode,
     activeTab,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      user: s.user,
+      logout: s.logout,
+      isLoadingSession: s.isLoadingSession,
+      isAuthOpen: s.isAuthOpen,
+      theme: s.theme,
+      sessionExpired: s.sessionExpired,
+      mounted: s.mounted,
+      setMounted: s.setMounted,
+      setTheme: s.setTheme,
+      setSessionExpired: s.setSessionExpired,
+      setIsAuthOpen: s.setIsAuthOpen,
+      refreshSession: s.refreshSession,
+      loadSubscriptions: s.loadSubscriptions,
+      loadFeed: s.loadFeed,
+      loadArticleStates: s.loadArticleStates,
+      selectedFeedUrl: s.selectedFeedUrl,
+      setIsSidebarCollapsed: s.setIsSidebarCollapsed,
+      viewMode: s.viewMode,
+      activeTab: s.activeTab,
+    }))
+  );
 
   // Global keyboard shortcuts (j/k/r/b/v//)
   useKeyboardShortcuts();

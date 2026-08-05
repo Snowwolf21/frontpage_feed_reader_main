@@ -2,6 +2,7 @@
 
 import { Plus, Compass, Newspaper, Rss, FileUp } from "lucide-react";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 
 export default function MobileNavigation() {
@@ -11,14 +12,22 @@ export default function MobileNavigation() {
     setActiveTab,
     setViewMode,
     importOpml,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      setIsAddOpen: s.setIsAddOpen,
+      activeTab: s.activeTab,
+      setActiveTab: s.setActiveTab,
+      setViewMode: s.setViewMode,
+      importOpml: s.importOpml,
+    }))
+  );
 
   const handleImportOpml = async (file: File | null) => {
     await importOpml(file);
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-zinc-200 bg-white/95 pb-safe px-2 py-2.5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-zinc-200 bg-white/95 pb-safe px-1 py-1 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:hidden">
       <Button
         variant="ghost"
         type="button"
@@ -26,7 +35,7 @@ export default function MobileNavigation() {
           setActiveTab("feed");
           setViewMode("sources");
         }}
-        className={`flex flex-col items-center gap-0.5 text-[10px] h-auto p-0 font-normal hover:bg-transparent transition-colors ${
+        className={`flex-1 flex flex-col items-center justify-center gap-1 text-[11px] h-12 p-0 font-normal hover:bg-transparent transition-colors cursor-pointer rounded-xl ${
           activeTab === "feed"
             ? "text-indigo-650 dark:text-indigo-400 font-semibold"
             : "text-zinc-500 dark:text-zinc-400"
@@ -40,7 +49,7 @@ export default function MobileNavigation() {
         variant="ghost"
         type="button"
         onClick={() => setActiveTab("digest")}
-        className={`flex flex-col items-center gap-0.5 text-[10px] h-auto p-0 font-normal hover:bg-transparent transition-colors ${
+        className={`flex-1 flex flex-col items-center justify-center gap-1 text-[11px] h-12 p-0 font-normal hover:bg-transparent transition-colors cursor-pointer rounded-xl ${
           activeTab === "digest"
             ? "text-indigo-650 dark:text-indigo-400 font-semibold"
             : "text-zinc-500 dark:text-zinc-400"
@@ -54,7 +63,7 @@ export default function MobileNavigation() {
         variant="ghost"
         type="button"
         onClick={() => setActiveTab("discover")}
-        className={`flex flex-col items-center gap-0.5 text-[10px] h-auto p-0 font-normal hover:bg-transparent transition-colors ${
+        className={`flex-1 flex flex-col items-center justify-center gap-1 text-[11px] h-12 p-0 font-normal hover:bg-transparent transition-colors cursor-pointer rounded-xl ${
           activeTab === "discover"
             ? "text-indigo-650 dark:text-indigo-400 font-semibold"
             : "text-zinc-500 dark:text-zinc-400"
@@ -68,13 +77,13 @@ export default function MobileNavigation() {
         variant="ghost"
         type="button"
         onClick={() => setIsAddOpen(true)}
-        className="flex flex-col items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white h-auto p-0 font-normal hover:bg-transparent"
+        className="flex-1 flex flex-col items-center justify-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white h-12 p-0 font-normal hover:bg-transparent cursor-pointer rounded-xl"
       >
         <Plus className="h-5 w-5" />
         <span>Add</span>
       </Button>
 
-      <label className="flex flex-col items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer select-none">
+      <label className="flex-1 flex flex-col items-center justify-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer select-none h-12 p-0 rounded-xl">
         <FileUp className="h-5 w-5" />
         <span>Import</span>
         <input 

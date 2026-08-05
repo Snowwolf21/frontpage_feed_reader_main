@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/ui/logo";
 import { useStore } from "@/app/store/useStore";
+import { useShallow } from "zustand/react/shallow";
 import type { Subscription } from "@/app/store/useStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +51,25 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
     setSelectedFeedUrl,
     activeTab,
     setActiveTab,
-  } = useStore();
+  } = useStore(
+    useShallow((s) => ({
+      user: s.user,
+      search: s.search,
+      theme: s.theme,
+      subscriptions: s.subscriptions,
+      selectedFeedUrl: s.selectedFeedUrl,
+      setSearch: s.setSearch,
+      setIsAddOpen: s.setIsAddOpen,
+      setIsAuthOpen: s.setIsAuthOpen,
+      setTheme: s.setTheme,
+      importOpml: s.importOpml,
+      logout: s.logout,
+      setActiveCategory: s.setActiveCategory,
+      setSelectedFeedUrl: s.setSelectedFeedUrl,
+      activeTab: s.activeTab,
+      setActiveTab: s.setActiveTab,
+    }))
+  );
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const categories = useMemo(
@@ -84,6 +103,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search feeds..."
+              aria-label="Search feeds"
               autoFocus
               className="h-9 flex-1 bg-transparent text-sm outline-none text-zinc-900 dark:text-zinc-50 border border-zinc-300 rounded-lg px-2 mr-1"
             />
@@ -104,7 +124,11 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
         )}
 
         <div className="flex items-center gap-3 md:gap-5">
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 font-bold shrink-0">
+          <Link 
+            href={user ? "/dashboard" : "/"} 
+            className="flex items-center gap-2 font-bold shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg"
+            aria-label={user ? "Frontpage Dashboard" : "Frontpage Home"}
+          >
             <Logo />
           </Link>
           
@@ -158,6 +182,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search feeds"
+              aria-label="Search feeds"
               className="h-9 w-full rounded-md border border-zinc-300 bg-zinc-50 pl-8 pr-3 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
             />
           </div>
@@ -259,6 +284,7 @@ export default function DashboardHeader({ sampleSubscriptions }: DashboardHeader
             <Plus className="h-4 w-4" />
           </Button>
           <label className="hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-zinc-200 bg-white hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800">
+            <span className="sr-only">Import OPML file</span>
             <FileUp className="h-4 w-4" />
             <input 
               type="file" 
