@@ -6,6 +6,7 @@ import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { OAuthButtons } from "./OAuthButtons";
 
+export const dynamic = "force-dynamic";
 interface LoginFormProps {
   onClose: () => void;
   onSuccess?: () => void;

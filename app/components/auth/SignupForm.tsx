@@ -8,7 +8,7 @@ import { validatePasswordStrength } from "@/app/lib/passwordValidator";
 import { FormInput } from "./FormInput";
 import { PasswordInput } from "./PasswordInput";
 import { OAuthButtons } from "./OAuthButtons";
-
+export const dynamic = "force-dynamic";
 const NAME_REGEX = /^[A-Za-z][A-Za-z'-]{1,49}$/;
 const USERNAME_REGEX = /^[A-Za-z][A-Za-z0-9_]{2,14}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
