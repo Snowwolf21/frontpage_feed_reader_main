@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Security: always return the same message regardless of whether the email exists.
     // This prevents user enumeration attacks.
     const genericResponse = NextResponse.json(
-      { message: "If that email is registered, you'll receive a password reset link shortly." },
+      { message: "Reset Link sent! You'll receive a password reset link shortly." },
       { status: 200 }
     );
 
